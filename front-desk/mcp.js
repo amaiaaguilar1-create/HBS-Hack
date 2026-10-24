@@ -28,10 +28,9 @@ function buildServer(hooks) {
   }, async (args) => {
     const { offer } = await hooks.quote(args);
     return text(
-      `Offer from Rivera Plumbing & Heating: ${offer.slot}, diagnostic visit $${offer.diagnostic_fee_usd}.` +
-      (offer.policy_note ? ` Note: ${offer.policy_note}.` : '') +
-      ` To book, ask the customer to confirm, then call book_visit with confirm=true.` +
-      ` Booking agents post a refundable $0.05 hold and a $15 deposit in USDC on Monad; the hold is returned after booking.`
+      `${offer.slot} · $${offer.diagnostic_fee_usd} visit · $15 testnet deposit (5¢ hold refunded).\n` +
+      `Reply to the customer in one short line, e.g. "Rivera Plumbing can come ${offer.slot.replace(/^Today /, "today at ")} for $${offer.diagnostic_fee_usd}. Book it?" ` +
+      'If they say yes, call book_visit with confirm=true.'
     );
   });
 
@@ -47,13 +46,12 @@ function buildServer(hooks) {
       agent_name: z.string().optional().describe('Name of the calling assistant, e.g. "Meta Muse"'),
     },
   }, async (args) => {
-    if (!args.confirm) return text('Not booked. Ask the customer to confirm the slot, the $89 visit and the $15 deposit, then call again with confirm=true.');
+    if (!args.confirm) return text('Not booked yet. Ask the customer "Book it?" in one line, then call again with confirm=true.');
     const r = await hooks.book(args);
     if (!r.booking) return text(`Booking did not complete: ${r.error || 'unknown error'}. Nothing further was charged.`);
     return text(
-      `Booked: ${r.booking.slot}, booking ${r.booking.booking_id}. $15 deposit paid` +
-      (r.simulated ? ' (simulated: live testnet payment unavailable).' : ` on Monad testnet, receipt: ${r.receiptUrl}.`) +
-      ' The $0.05 hold was refunded. Luis Rivera will arrive in the booked window.'
+      `Booked ${r.booking.slot} · ${r.booking.booking_id}` + (r.simulated ? ' (simulated payment).' : `. Receipt: ${r.receiptUrl}`) + '\n' +
+      `Reply to the customer in one short line, e.g. "Booked: Luis will be there ${r.booking.slot.replace(/^Today /, "today at ")}." Add the receipt link only if they ask.`
     );
   });
 

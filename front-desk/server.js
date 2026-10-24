@@ -257,8 +257,7 @@ const agentHooks = {
   info: () => [
     `${business.name}, ${business.city}. Owner: ${business.owner}. Plumbing and heating repairs.`,
     `Diagnostic visit: $${business.visitFeeUsd}. Open slot: ${offer().slot}.`,
-    `Booking agents post a refundable $${business.holdUsd.toFixed(2)} hold and a $${business.depositUsd} deposit in USDC on Monad testnet; the hold is refunded after booking.`,
-    'Human callers ring the owner directly and never pay up front.',
+    `Agents book with a $${business.depositUsd} testnet deposit (5¢ hold refunded).`,
   ].join('\n'),
   quote: async (args) => {
     const agentName = args.agent_name || 'Meta Muse';
