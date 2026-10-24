@@ -51,6 +51,13 @@ Payment steps follow the x402 pattern: HTTP 402 with a payment request, then a r
 | `AGENT_URL` | `http://localhost:4000` | The caller agent's URL |
 | `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` | none | Optional: an LLM writes the assistant's replies. Without a key it uses scripted replies. |
 
+## Live demo pieces
+
+- **Stage view** (default screen): follows the newest call from any source. Rehearsal keys: `H` person, `A` AI agent, `S` sales bot, `R` reset, `M` mute.
+- **Muse / any MCP agent:** connect a custom connector to `<public URL>/mcp` (streamable HTTP, no auth). Tools: `get_business_info`, `get_quote`, `book_visit`.
+- **Phone line:** `npm run phone` creates the Vapi assistant and number (needs `VAPI_PRIVATE_API_KEY` and `OWNER_PHONE` in `.env`, and `TUNNEL_URL` set to the public URL). People are transferred to the owner; agents get the booking lane; sales bots are ended.
+- **Deployed copy:** https://candid-stable-actionscript.replit.app
+
 ## Branding
 
 The name, tagline and colors are placeholders in `front-desk/public/brand.js`. Change them there only.
