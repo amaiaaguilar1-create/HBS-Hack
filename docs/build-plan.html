@@ -1,0 +1,673 @@
+<title>Dualtone Build Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column with a sticky section index; timeline as a two-lane grid (human orange = Amaia, agent blue = Ashwini). */
+:root {
+  --bg: #F5F2EC; --surface: #FFFFFF; --ink: #10141C; --muted: #4A5263; --line: #E2DED5;
+  --human: #C2410C; --human-soft: #FBE9DF; --agent: #2F5BD3; --agent-soft: #E3EAFB;
+  --ok: #1F7A4D; --warn: #9A6400; --code-bg: #10141C; --code-fg: #E7EAF0;
+  --display: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #10141C; --surface: #181E2A; --ink: #F1EEE8; --muted: #AEB6C6; --line: #2A3242;
+  --human: #FF8A4C; --human-soft: #2C1D16; --agent: #7FA6FF; --agent-soft: #16203A;
+  --ok: #5FD39A; --warn: #F2C04D; --code-bg: #0A0D13; --code-fg: #E7EAF0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #10141C; --surface: #181E2A; --ink: #F1EEE8; --muted: #AEB6C6; --line: #2A3242;
+  --human: #FF8A4C; --human-soft: #2C1D16; --agent: #7FA6FF; --agent-soft: #16203A;
+  --ok: #5FD39A; --warn: #F2C04D; --code-bg: #0A0D13; --code-fg: #E7EAF0; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 40px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.05; }
+h2 { font-size: clamp(24px, 3vw, 32px); line-height: 1.15; }
+h3 { font-size: 19px; line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--agent); }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 72px; }
+.lede { font-size: 18px; color: var(--muted); max-width: 68ch; }
+.prose { max-width: 70ch; display: flex; flex-direction: column; gap: 12px; }
+.mono { font-family: var(--mono); font-size: 0.92em; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand svg { width: 56px; height: 34px; flex: none; }
+.brand span { font-family: var(--display); font-weight: 700; font-size: 22px; }
+.hero { display: flex; flex-direction: column; gap: 18px; }
+.decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.decision { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.decision b { font-size: 15px; }
+.decision span { color: var(--muted); font-size: 14px; }
+
+/* index */
+nav.index { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 10px max(16px, env(safe-area-inset-left, 0px)); overflow-x: auto; white-space: nowrap; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+nav.index a { display: inline-block; color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; padding: 6px 10px; border-radius: 8px; }
+nav.index a:hover, nav.index a:focus-visible { color: var(--ink); background: var(--surface); outline: none; }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; background: var(--bg); }
+tr:last-child td { border-bottom: none; }
+tr.us td { background: var(--agent-soft); font-weight: 600; }
+
+/* pills */
+.pill { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.p-human { background: var(--human-soft); color: var(--human); }
+.p-agent { background: var(--agent-soft); color: var(--agent); }
+.p-both { background: var(--line); color: var(--ink); }
+.p-check { background: var(--ink); color: var(--bg); }
+
+/* timeline */
+.timeline { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.trow { display: grid; grid-template-columns: 92px 1fr 1fr; border-bottom: 1px solid var(--line); }
+.trow:last-child { border-bottom: none; }
+.trow > div { padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.trow .time { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--muted); }
+.trow .lane-a { border-left: 4px solid var(--human); }
+.trow .lane-b { border-left: 4px solid var(--agent); }
+.trow.head > div { background: var(--bg); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-block: 10px; }
+.trow.check { grid-template-columns: 92px 1fr; background: var(--ink); color: var(--bg); }
+.trow.check .time { color: var(--bg); opacity: 0.75; }
+.trow.check b { font-family: var(--display); }
+.trow ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.trow .tag { font-size: 12px; font-weight: 700; }
+@media (max-width: 720px) {
+  .trow { grid-template-columns: 1fr; }
+  .trow.head { display: none; }
+  .trow.check { grid-template-columns: 1fr; }
+  .trow .lane-a::before { content: "Amaia"; font-size: 12px; font-weight: 700; color: var(--human); }
+  .trow .lane-b::before { content: "Ashwini"; font-size: 12px; font-weight: 700; color: var(--agent); }
+}
+
+/* roles */
+.roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.role { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.role.a { border-top: 6px solid var(--human); }
+.role.b { border-top: 6px solid var(--agent); }
+.role ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+
+/* architecture diagram */
+.diagram { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.diagram svg { display: block; min-width: 760px; width: 100%; height: auto; }
+
+/* prompts */
+.prompt { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.prompt-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.prompt-head .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.prompt-head h3 { font-size: 17px; }
+.prompt-head .when { font-size: 13px; color: var(--muted); }
+pre { margin: 0; background: var(--code-bg); color: var(--code-fg); font-family: var(--mono); font-size: 13px; line-height: 1.55; padding: 16px; white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
+.prompt .note { padding: 12px 16px; font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); }
+button.copy { font: 600 13px var(--body); color: var(--bg); background: var(--ink); border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+button.copy:focus-visible { outline: 3px solid var(--agent); outline-offset: 2px; }
+button.copy.done { background: var(--ok); }
+
+/* lists, cards */
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card ul, .card ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.checklist { list-style: none; padding-left: 0 !important; }
+.checklist li { display: flex; gap: 10px; align-items: flex-start; }
+.checklist input { margin-top: 4px; width: 16px; height: 16px; accent-color: var(--agent); flex: none; }
+.callout { border-left: 4px solid var(--warn); background: var(--surface); padding: 14px 18px; border-radius: 0 12px 12px 0; }
+.script { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.line { display: grid; grid-template-columns: 96px 110px 1fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.line:last-child { border-bottom: none; }
+.line .t { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.line .who { font-weight: 700; font-size: 14px; }
+.line .who.a { color: var(--human); }
+.line .who.b { color: var(--agent); }
+.line .cue { display: block; font-size: 13px; color: var(--muted); margin-top: 4px; }
+@media (max-width: 640px) { .line { grid-template-columns: 1fr; gap: 2px; } }
+.qa { display: flex; flex-direction: column; gap: 10px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin-top: 8px; color: var(--muted); }
+.sources { font-size: 14px; color: var(--muted); columns: 2 320px; column-gap: 32px; }
+.sources li { break-inside: avoid; margin-bottom: 6px; }
+footer { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { button.copy { transition: background 160ms ease; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="brand">
+    <svg viewBox="0 0 120 72" aria-hidden="true"><path d="M4 36 C 24 4, 44 4, 60 36 S 96 68, 116 36" fill="none" stroke="var(--human)" stroke-width="10" stroke-linecap="round"/><path d="M4 36 C 24 68, 44 68, 60 36 S 96 4, 116 36" fill="none" stroke="var(--agent)" stroke-width="10" stroke-linecap="round"/></svg>
+    <span>Dualtone</span>
+  </div>
+  <p class="eyebrow">HBS × MIT Hackathon · Saturday, October 24 · build 12:00 → submit by 3:30 PM · demo 3:45</p>
+  <h1>Build plan for a two-lane front desk, in three hours, on Replit</h1>
+  <p class="lede">Dualtone answers a plumber’s phone and sorts every caller into one of three kinds. People ring through to the owner; if he’s on a job, a disclosed assistant takes a message and promises a callback time. Booking agents post a refundable 5¢ hold, get a two-second structured lane, and pay a $15 deposit in USDC on Monad. Sales and spam bots won’t pay the hold, so they never reach the owner. This page holds every decision, the task split, the prompts to paste into Replit Agent, and the 90-second script.</p>
+  <div class="decisions">
+    <div class="decision"><b>Hero customer</b><span>Plumbing &amp; HVAC shops with under 20 staff (96,222 US firms). Demo business: “Rivera Plumbing &amp; Heating”.</span></div>
+    <div class="decision"><b>The insight</b><span>An agent shopping five plumbers books the first one it can read. Agent-readable is the new “answering the phone”.</span></div>
+    <div class="decision"><b>Three kinds of callers</b><span>Human, booking agent, sales or spam agent. The first decision on every call. When unsure, treat the caller as human.</span></div>
+    <div class="decision"><b>Humans reach a human</b><span>Ring the owner first. If missed: a disclosed assistant takes a message, promises a callback time and texts it. It never books or quotes for people.</span></div>
+    <div class="decision"><b>Why Monad</b><span>A 5¢ refundable hold for every agent: good agents get it back, spam pays. On cards the ~30¢ fixed fee makes that impossible.</span></div>
+    <div class="decision"><b>Deposits &amp; priority</b><span>Agents only pay a $15 deposit. The owner’s rules decide what agents may commit to and which slots stay with people.</span></div>
+    <div class="decision"><b>Disclosure</b><span>Massachusetts requires every party’s consent to record, so the greeting says it’s an assistant and that the call is transcribed.</span></div>
+    <div class="decision"><b>Voice &amp; AI</b><span>Simulated call in the browser, text plus browser speech. LLM through Replit AI Integrations, or the free Gemini API as backup.</span></div>
+  </div>
+</header>
+
+<nav class="index" aria-label="Sections">
+  <a href="#rubric">Rubric</a><a href="#demo">Demo</a><a href="#arch">Architecture</a><a href="#roles">Who does what</a><a href="#timeline">Timeline</a><a href="#setup">Setup</a><a href="#prompts">Replit prompts</a><a href="#validate">Validation calls</a><a href="#fallbacks">Fallbacks</a><a href="#script">Pitch script</a><a href="#qa">Judge Q&amp;A</a><a href="#research">Research</a>
+</nav>
+
+<section id="rubric">
+  <p class="eyebrow">How we win</p>
+  <h2>Each judging criterion is worth 25%. This is where each one is won.</h2>
+  <div class="tbl"><table>
+    <tr><th style="width:20%">Criterion</th><th style="width:40%">What judges ask</th><th>Our answer on stage</th></tr>
+    <tr><td><b>Unique insight</b></td><td>Did I learn something I didn’t know?</td><td>Google’s AI already phones plumbers; Gemini now dials from the customer’s own number. None of the 14 AI receptionists we checked treats an agent as a customer. A 5¢ refundable hold makes spam pay and costs good agents nothing, which card rails can’t do. Plus a number we gather ourselves today (validation calls).</td></tr>
+    <tr><td><b>Problem worth solving</b></td><td>Is this a real pain for a real person?</td><td>44% of callers never reach a person. Mrs. Alvarez, 78, with a leak, gets a promised human callback instead of a bot. Luis, the owner, stops losing jobs to whoever answers first, and sales bots stop eating his day.</td></tr>
+    <tr><td><b>Working product</b></td><td>Does it work, live, right now?</td><td>Two separate services really talk to each other, and a real USDC transfer on Monad testnet appears with a link judges can click.</td></tr>
+    <tr><td><b>Demo</b></td><td>Did they show it clearly in 90 seconds?</td><td>One screen, two lanes side by side. A timer reads about 2 s against “typical call 3 min 40 s”. Scripted reply buttons and keyboard shortcuts mean nobody types on stage.</td></tr>
+  </table></div>
+  <p class="lede">Code quality counts for 0%. Spend no time on clean code; spend it on the demo never breaking.</p>
+</section>
+
+<section id="demo">
+  <p class="eyebrow">Build backwards from this</p>
+  <h2>The 40 seconds of live demo we are building</h2>
+  <div class="tbl"><table>
+    <tr><th style="width:12%">Time</th><th style="width:16%">Lane</th><th>What the audience sees</th></tr>
+    <tr><td class="num">0:25</td><td><span class="pill p-human">Human</span></td><td>Press H. Badge: <i>Human caller</i>. Status: “Ringing Luis… on a job, no answer”. The assistant speaks a disclosed greeting: it is an automated assistant, the call is transcribed, Luis will call back.</td></tr>
+    <tr><td class="num">0:30</td><td><span class="pill p-human">Human</span></td><td>Press 1, then 2 (“water under my sink”, “I’m 78 and I live alone”). The assistant reassures her, tells her where the shut-off valve is, and promises a callback. Cards appear: <b>Message for Luis: urgent</b>, <b>Text sent to caller: “Luis will call you by 2:15 PM”</b>, <b>Top of Luis’s callback list</b>.</td></tr>
+    <tr><td class="num">0:40</td><td><span class="pill p-agent">Agent</span></td><td>Press A. Badge flips to <i>Booking agent · Google Gemini · 0.97</i>. Message cards race down: hello → <b>5¢ refundable hold</b> (402) → hold paid → request → quote and slot within the owner’s rules → <b>$15 deposit</b> (402) → paid → confirmed → <b>hold refunded</b>.</td></tr>
+    <tr><td class="num">0:55</td><td><span class="pill p-agent">Agent</span></td><td>Receipt card: <b>Deposit secured · $15.00 · settled in 0.8 s · 5¢ hold returned</b>. Click “View on-chain receipt ↗”, hold one second on the Monad explorer.</td></tr>
+    <tr><td class="num">1:00</td><td><span class="pill p-both">Spam</span></td><td>Press S, “Sales bot calls”. Badge: <i>Sales agent</i>. It is asked for the 5¢ hold, doesn’t pay, and is <b>blocked in 0.9 s</b>. Luis is never interrupted.</td></tr>
+    <tr><td class="num">after</td><td><span class="pill p-both">Owner</span></td><td>Only if time allows, or in Q&amp;A: press D. The dashboard shows humans reached, callbacks waiting, agent bookings revenue, spam blocked, and the misclassification rate.</td></tr>
+  </table></div>
+</section>
+
+<section id="arch">
+  <p class="eyebrow">Architecture</p>
+  <h2>Two Repls, so you can both build at once, and the agent-to-agent exchange is real</h2>
+  <div class="prose">
+    <p>Replit allows one Agent task at a time per project, and two people prompting one Repl collide. So each of you owns one Repl, and the two meet at a small, fixed contract. The split is also true to the product: the front desk belongs to the plumber, while the caller agent and its wallet belong to the homeowner’s assistant.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 900 330" role="img" aria-label="Repl A, the Dualtone front desk, exchanges messages with Repl B, the caller agent, which pays USDC on Monad testnet to the business wallet.">
+      <rect x="10" y="20" width="330" height="290" rx="16" fill="var(--human-soft)" stroke="var(--human)" stroke-width="2"/>
+      <rect x="560" y="20" width="330" height="290" rx="16" fill="var(--agent-soft)" stroke="var(--agent)" stroke-width="2"/>
+      <rect x="380" y="232" width="140" height="78" rx="12" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+      <path d="M340 110 L560 110" stroke="var(--ink)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+      <path d="M560 160 L340 160" stroke="var(--ink)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+      <path d="M560 270 L520 270" stroke="var(--ink)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+      <path d="M380 270 L340 270" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#ah)"/>
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink)"/></marker></defs>
+      <text x="30" y="56" font-family="DM Sans, Arial, sans-serif" font-size="13" font-weight="700" fill="var(--human)" letter-spacing="1.5">REPL A · AMAIA</text>
+      <text x="30" y="84" font-family="Space Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="var(--ink)">Dualtone front desk</text>
+      <text x="30" y="120" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Live calls screen (2 lanes)</text>
+      <text x="30" y="144" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Owner dashboard</text>
+      <text x="30" y="168" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Human lane: LLM + browser voice</text>
+      <text x="30" y="200" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">GET /.well-known/agent-card.json</text>
+      <text x="30" y="222" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">POST /a2a/hello, /a2a/book → 402/200</text>
+      <text x="30" y="244" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">POST /api/human/reply</text>
+      <text x="30" y="266" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">GET /api/dashboard</text>
+      <text x="30" y="292" font-family="DM Sans, Arial, sans-serif" font-size="12" fill="var(--muted)">Secrets: AGENT_URL, BUSINESS_ADDRESS, PUBLIC_URL</text>
+      <text x="580" y="56" font-family="DM Sans, Arial, sans-serif" font-size="13" font-weight="700" fill="var(--agent)" letter-spacing="1.5">REPL B · ASHWINI</text>
+      <text x="580" y="84" font-family="Space Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="var(--ink)">Caller agent + wallet</text>
+      <text x="580" y="120" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Stand-in for Google Gemini</text>
+      <text x="580" y="144" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Holds the homeowner’s USDC</text>
+      <text x="580" y="168" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Status page with balances</text>
+      <text x="580" y="200" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">POST /api/caller/run</text>
+      <text x="580" y="222" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">POST /api/deposit/pay</text>
+      <text x="580" y="244" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">POST /api/reset</text>
+      <text x="580" y="266" font-family="JetBrains Mono, monospace" font-size="12.5" fill="var(--ink)">GET /api/health · /api/last</text>
+      <text x="580" y="292" font-family="DM Sans, Arial, sans-serif" font-size="12" fill="var(--muted)">Secrets: CALLER_PRIVATE_KEY, BUSINESS_PRIVATE_KEY</text>
+      <text x="450" y="100" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="13" fill="var(--ink)">1 · “run a call” + front-desk URL</text>
+      <text x="450" y="150" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="13" fill="var(--ink)">2 · hold, request, deposit, confirmed</text>
+      <text x="450" y="258" text-anchor="middle" font-family="Space Grotesk, Arial, sans-serif" font-size="15" font-weight="700" fill="var(--ink)">Monad testnet</text>
+      <text x="450" y="280" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="12.5" fill="var(--muted)">5¢ hold, $15 deposit,</text>
+      <text x="450" y="298" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="12.5" fill="var(--muted)">5¢ refund, each &lt;1 s</text>
+    </svg>
+  </div>
+  <div class="card">
+    <h3>The contract between the two Repls (agree on this at 12:10, then don’t change it)</h3>
+    <pre>Repl A (front desk) exposes:
+  GET  /.well-known/agent-card.json      A2A-style Agent Card
+  POST /a2a/hello  body {"agent","on_behalf_of","intent"}      intent: "book_service" | "sell_services"
+       no header            → 402 {"classification":"booking_agent" | "sales_agent",
+                                   "payment_required":{"amount_usd":0.05,"purpose":"refundable_hold",
+                                   "asset":"USDC","network":"eip155:10143","pay_to":"&lt;BUSINESS_ADDRESS&gt;"}}
+       header X-PAYMENT-TX  → 200 {"session_id":"S-…","classification":"booking_agent"}
+  POST /a2a/book   body {"session_id","issue","zip","window","max_price_usd"}
+       no header            → 402 {"offer":{"slot":"Today 4:00 PM","diagnostic_fee_usd":89,
+                                   "policy_note":"2:00 PM is held for human callers by the owner's rules"},
+                                   "payment_required":{"amount_usd":15,"purpose":"deposit",
+                                   "asset":"USDC","network":"eip155:10143","pay_to":"&lt;BUSINESS_ADDRESS&gt;"}}
+       header X-PAYMENT-TX  → 200 {"booking_id":"RPH-1042","slot":"Today 4:00 PM","status":"confirmed",
+                                   "hold_refund":{"amount_usd":0.05}}
+
+Repl B (caller agent) exposes:
+  POST /api/caller/run  body {"frontDeskUrl"} → {"steps":[{"tMs","from","to","label","json"}],
+                                                 "payments":[{"purpose","hash","explorerUrl","settledMs"}],
+                                                 "booking":{...}, "totalMs"}
+  POST /api/reset       sends the test USDC back to the caller wallet (run before every demo)
+
+In the demo Repl B signs for both wallets, so it also sends the 5¢ refund.
+In production the hold would sit in an escrow contract that Dualtone controls.
+Explorer link format: https://testnet.monadvision.com/tx/&lt;hash&gt;</pre>
+  </div>
+</section>
+
+<section id="roles">
+  <p class="eyebrow">Who does what</p>
+  <h2>Two people, four hats</h2>
+  <div class="roles">
+    <div class="role a">
+      <h3>Amaia · Product lead and designer</h3>
+      <p class="lede" style="font-size:15px">Owns Repl A, the story, and how it looks on a projector.</p>
+      <ul>
+        <li>Repl A: Live calls screen, owner dashboard, human lane (LLM + voice), caller detection, connecting the agent lane.</li>
+        <li>Design: clear screens first. The name, colors and logo are placeholders in one file until the final pass (P7).</li>
+        <li>PM: holds the feature freeze at 2:30 and cuts anything not in the 40-second demo.</li>
+        <li>Records the backup demo video.</li>
+        <li>Pitch: hook, problem, and the human half of the demo.</li>
+      </ul>
+    </div>
+    <div class="role b">
+      <h3>Ashwini · Payments engineer and researcher</h3>
+      <p class="lede" style="font-size:15px">Owns Repl B, the money, and the evidence.</p>
+      <ul>
+        <li>Repl B: wallets, faucets, USDC payment on Monad, the caller agent, the reset loop.</li>
+        <li>Talks to the Monad Foundation table early if the faucet blocks.</li>
+        <li>Researcher: 15 minutes of mystery-shop calls to Boston plumbers while Agent builds (see the Validation calls section).</li>
+        <li>Pitch: the agent half of the demo, “why us”, market, and the ask.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="timeline">
+  <p class="eyebrow">Hour by hour</p>
+  <h2>Noon to 3:30, with three checkpoints</h2>
+  <p class="lede">Replit Agent builds take 5–20 minutes each. Use that waiting time: reviewing, faucets, validation calls, deck edits. Never sit watching a build.</p>
+  <div class="timeline">
+    <div class="trow head"><div>Time</div><div>Amaia · Repl A</div><div>Ashwini · Repl B</div></div>
+    <div class="trow">
+      <div class="time">12:00</div>
+      <div class="lane-a"><ul><li>Redeem the Replit trial, create Repl A “dualtone”.</li><li>Paste <b>P0</b> (check that the LLM works). If it fails, get a Gemini key (Setup).</li></ul></div>
+      <div class="lane-b"><ul><li>Redeem the Replit trial, create Repl B “dualtone-agent”.</li><li>Paste <b>P2a</b> (wallets only). Save both keys in Secrets. Send Amaia the BUSINESS address.</li></ul></div>
+    </div>
+    <div class="trow">
+      <div class="time">12:15</div>
+      <div class="lane-a"><ul><li>Paste <b>P1</b> in Plan mode, approve the plan, let it build.</li><li>Meanwhile: share the deck with Ashwini, read the script out loud once.</li></ul></div>
+      <div class="lane-b"><ul><li>Faucets: MON to both addresses, 20 USDC to CALLER (Setup).</li><li>Blocked? Walk to the Monad Foundation table.</li><li>Paste <b>P2b</b> (payment service).</li></ul></div>
+    </div>
+    <div class="trow">
+      <div class="time">12:30</div>
+      <div class="lane-a"><ul><li>Grab lunch, eat at the keyboard.</li><li>Review P1’s build: click both buttons, fix with small prompts, roll back if it breaks.</li></ul></div>
+      <div class="lane-b"><ul><li>Grab lunch.</li><li>Press “Send $1 test payment” on the status page. <b>Goal: one real transaction on the explorer by 1:00.</b></li></ul></div>
+    </div>
+    <div class="trow">
+      <div class="time">1:00</div>
+      <div class="lane-a"><ul><li>Small fixes on Repl A. Set Secrets BUSINESS_ADDRESS and PUBLIC_URL.</li></ul></div>
+      <div class="lane-b"><ul><li>Paste <b>P4</b> (caller agent).</li><li>While it builds: <b>validation calls</b>, 15 minutes.</li></ul></div>
+    </div>
+    <div class="trow check"><div class="time">1:15</div><div><b>Checkpoint 1 (5 min, together).</b> Repl A shows both lanes with scripted data? Repl B has one real transaction on the explorer? If no transaction yet, choose a fallback now (Fallbacks section).</div></div>
+    <div class="trow">
+      <div class="time">1:20</div>
+      <div class="lane-a"><ul><li>Paste <b>P3</b>: real LLM in the human lane, browser voice, caller detection.</li></ul></div>
+      <div class="lane-b"><ul><li>Test <span class="mono">/api/caller/run</span> against Repl A’s <span class="mono">/a2a/book</span>. Fix field names until the 402 → pay → 200 loop works.</li></ul></div>
+    </div>
+    <div class="trow">
+      <div class="time">1:45</div>
+      <div class="lane-a"><ul><li>Publish Repl A (Autoscale, add production secrets). Share the URL.</li></ul></div>
+      <div class="lane-b"><ul><li>Publish Repl B (Autoscale, add production secrets). Share the URL.</li></ul></div>
+    </div>
+    <div class="trow check"><div class="time">2:00</div><div><b>Checkpoint 2: connect.</b> Amaia sets AGENT_URL and pastes <b>P5</b>. Run the full demo end to end three times, calling reset between runs.</div></div>
+    <div class="trow">
+      <div class="time">2:15</div>
+      <div class="lane-a"><ul><li>Paste <b>P6</b> (projector polish, keyboard shortcuts).</li><li>Decide the final name and look together (5 min), then paste <b>P7</b> and update the deck’s name.</li></ul></div>
+      <div class="lane-b"><ul><li>Add the validation-call number to slide 2 if you got one. Time the script with a stopwatch.</li></ul></div>
+    </div>
+    <div class="trow check"><div class="time">2:30</div><div><b>Feature freeze.</b> Republish both. Record a 60-second backup video of the full demo (Cmd + Shift + 5) and save it to both laptops.</div></div>
+    <div class="trow">
+      <div class="time">2:40</div>
+      <div class="lane-a"><ul><li>Submit: app URL, deck link, one-line description.</li></ul></div>
+      <div class="lane-b"><ul><li>Check wallet balances; top up USDC if the faucet allows. Run reset.</li></ul></div>
+    </div>
+    <div class="trow check"><div class="time">3:00</div><div><b>Done, with a 30-minute buffer</b> before submissions close at 3:30. Rehearse until 3:45: three timed run-throughs, swapping who drives.</div></div>
+  </div>
+</section>
+
+<section id="setup">
+  <p class="eyebrow">Setup</p>
+  <h2>Accounts, keys and test money (all free)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Both of you</h3>
+      <ul class="checklist">
+        <li><input type="checkbox" id="s1"><label for="s1">Redeem the Replit trial from the event page (hbs-x-mit-hackathon.replit.app). Each of you uses your own account.</label></li>
+        <li><input type="checkbox" id="s2"><label for="s2">Chrome on the demo laptop, volume up, “Google US English” voice available.</label></li>
+        <li><input type="checkbox" id="s3"><label for="s3">Phone hotspot ready in case the Wi-Fi drops.</label></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Amaia · Repl A</h3>
+      <ul class="checklist">
+        <li><input type="checkbox" id="s4"><label for="s4">P0 confirms Replit AI Integrations works. If not: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> → create a key → Secret <span class="mono">GEMINI_API_KEY</span>.</label></li>
+        <li><input type="checkbox" id="s5"><label for="s5">Secret <span class="mono">BUSINESS_ADDRESS</span> = the BUSINESS wallet address from Ashwini.</label></li>
+        <li><input type="checkbox" id="s6"><label for="s6">Secret <span class="mono">PUBLIC_URL</span> = Repl A’s public URL; later <span class="mono">AGENT_URL</span> = Repl B’s URL.</label></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Ashwini · Repl B and wallets</h3>
+      <ul class="checklist">
+        <li><input type="checkbox" id="s7"><label for="s7">Run P2a, then put the keys in Secrets <span class="mono">CALLER_PRIVATE_KEY</span> and <span class="mono">BUSINESS_PRIVATE_KEY</span>. They are throwaway testnet keys; teammates can see Secrets.</label></li>
+        <li><input type="checkbox" id="s8"><label for="s8">Test MON for gas to both addresses: <a href="https://faucet.monad.xyz" target="_blank" rel="noopener">faucet.monad.xyz</a>. Busy or blocked? Ask the Monad Foundation table, or try <a href="https://www.alchemy.com/faucets/monad-testnet" target="_blank" rel="noopener">Alchemy’s faucet</a>.</label></li>
+        <li><input type="checkbox" id="s9"><label for="s9">20 test USDC to the CALLER address: <a href="https://faucet.circle.com" target="_blank" rel="noopener">faucet.circle.com</a> → network “Monad Testnet”. Limit: once per address every 2 hours, which is why the demo deposit is $15 and reset sends it back.</label></li>
+        <li><input type="checkbox" id="s10"><label for="s10">Check the USDC contract on <a href="https://testnet.monadvision.com" target="_blank" rel="noopener">testnet.monadvision.com</a> before relying on it (address is in P2b).</label></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="prompts">
+  <p class="eyebrow">Paste into Replit Agent</p>
+  <h2>Prompts, in order</h2>
+  <p class="lede">Use Plan mode for P1 and P2b. Keep follow-up prompts small and testable. If Agent breaks something, roll back to the last checkpoint instead of arguing with it.</p>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-human">Amaia · Repl A</span><h3>P0 · Check the LLM works</h3><span class="when">12:05 · 3 min</span></div><button class="copy" type="button" data-target="p0">Copy</button></div>
+<pre id="p0">Quick check before we build anything. Create a minimal Express server with one route, GET /api/ping-llm, that sends the prompt "Reply with the single word: ready" to an LLM using Replit AI Integrations (Anthropic Claude Sonnet if available, otherwise any available model) and returns the reply as JSON. Don't build anything else yet. Tell me clearly whether Replit AI Integrations worked on this account.</pre>
+    <p class="note">If Agent says AI Integrations needs a paid plan: create a free Gemini key (Setup) and reply “Use the Gemini API, model gemini-2.5-flash, with the key in the secret GEMINI_API_KEY. Put every LLM call behind one llm() helper.”</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-human">Amaia · Repl A</span><h3>P1 · Build the front desk (Plan mode)</h3><span class="when">12:15 · 20–30 min build</span></div><button class="copy" type="button" data-target="p1">Copy</button></div>
+<pre id="p1">Build a web demo of an AI phone front desk for a small plumbing company. Every caller is sorted into one of three kinds: a human, a booking agent (an AI assistant booking a job for someone), or a sales/spam agent. This is a hackathon demo shown on a projector: it must be clear, reliable and never get stuck. Use React (Vite) + Express + TypeScript in one app. Keep data in memory, seeded on startup. Show me the plan first.
+
+PLACEHOLDER BRANDING (it will change at the end, so keep it in one place): put the product name ("Dualtone"), the tagline and all colors in a single file, src/brand.ts, and read them from there everywhere. For now: dark background #10141C, light #F5F2EC, human color orange #FF8A4C, agent color blue #7FA6FF, muted text #B9C2D3. System fonts are fine. No logo work.
+
+BUSINESS (fictional): Rivera Plumbing &amp; Heating, Somerville MA. Owner: Luis Rivera, currently out on a job. Open slots: today 2:00 PM and 4:00 PM; tomorrow 9:00 AM and 11:30 AM. Diagnostic visit $89.
+
+OWNER RULES (in memory, shown as toggles on the dashboard):
+- Hold same-day slots for human callers: on (today 2:00 PM is held).
+- Agents may, on their own: quote published prices, book open non-held slots, take a $15 deposit.
+- Needs owner approval: custom quotes, jobs over $500, after-hours emergencies.
+- Every agent posts a $0.05 refundable hold before talking to us. Refunded when the call is legitimate; kept when it was sales or spam.
+- Deposit to hold a slot: AI agents only ($15). Human callers never pay anything up front.
+- When unsure whether a caller is a human or an agent, treat them as human.
+
+SCREEN 1 "Live calls" (route /): two equal columns plus a thin row at the bottom. Must fit a 1440x900 screen without page scrolling. Body text at least 18px.
+
+LEFT COLUMN, "Humans reach a human" (orange):
+- Button "Mrs. Alvarez calls". A call card: name, (617) 555-0142, live timer, detection badge "Human caller".
+- A status line: "Ringing Luis..." for 2 seconds, then "Luis is on a job, no answer".
+- Then the assistant's greeting bubble, which must disclose: "Hi, you've reached Rivera Plumbing. Luis is on a job right now. I'm an automated assistant, and this call is transcribed so he gets your message. What can I pass on to him?"
+- A transcript with bubbles. Under it, 3 suggested-line buttons the presenter clicks (so nobody types on stage):
+  1) "Hi, there's water coming out from under my kitchen sink and I don't know what to do."
+  2) "I'm 78 and I live alone, I'm really worried. Can someone come today?"
+  3) "Thank you, dear. I'll wait for his call."
+  Plus a small free-text input.
+- The assistant never books or quotes for humans. It reassures, gives the shut-off tip (turn the valve under the sink clockwise), takes the message and promises a callback time. For now replies come from a scripted list, behind one route, POST /api/human/reply {callId, text}, so we can swap in an LLM later.
+- Result cards: "Message for Luis: URGENT. Mrs. Alvarez, active leak under the kitchen sink, 78 and alone." / "Text sent to caller: Luis will call you by 2:15 PM. If water spreads, turn the valve under the sink clockwise." / "Top of Luis's callback list".
+
+RIGHT COLUMN, "Booking agents get a fast lane" (blue):
+- Button "Gemini calls for a homeowner". A call card whose detection badge flips from "Identifying caller..." to "Booking agent · Google Gemini · 0.97", with reasons ("announced it is automated", "offered an agent card", "intent: book a service").
+- A vertical stream of message cards. Each shows a millisecond timestamp, a direction ("Agent → Front desk" or "Front desk → Agent"), a short plain-English label, and the JSON in a collapsible monospace block.
+- Steps: agent card fetched · agent_hello · hold required, HTTP 402 ($0.05 refundable) · hold paid · service_request {issue: "kitchen sink leak", zip: "02144", window: "today"} · offer {slot: "Today 4:00 PM", diagnostic_fee_usd: 89, policy_note: "2:00 PM is held for human callers"} · deposit required, HTTP 402 ($15) · deposit paid · booking_confirmed {booking_id: "RPH-1042"} · hold refunded ($0.05).
+- A large timer with total seconds (e.g. "2.1 s") next to "Typical phone call: 3 min 40 s".
+- Final receipt card: "Deposit secured · $15.00 · settled in X s · 5¢ hold returned" with "View on-chain receipt ↗" links. For now, run a scripted sequence from POST /api/agent/simulate and label the receipt "Simulated payment" with no link.
+
+BOTTOM ROW, "Sales &amp; spam bots" (grey): button "Sales bot calls". Scripted: hello from "GrowthLeads outbound agent", intent "sell_services" → badge "Sales agent" → "Hold required: $0.05" → no payment within 1 second → "Blocked in 0.9 s · Luis never interrupted". Logged to the dashboard.
+
+TOP BAR: product name from brand.ts, business name, tabs "Live calls" / "Owner dashboard", and a small "Reset demo" button.
+
+SCREEN 2 "Owner dashboard" (route /dashboard):
+- KPI tiles: Humans who reached a human (owner picked up or callback completed, e.g. "9 of 10"), Callbacks waiting, Agent bookings ($ revenue), Spam agents blocked, Misclassified this week (from owner corrections), Hours saved.
+- "Callback list": human callers waiting, urgent first, with the promised time and a "Mark called" button.
+- Call log table: time, caller, type (Human / Booking agent / Sales agent, as colored pills that include the word), outcome, deposit, receipt link, and a small "Wrong type?" button offering "This was a person" / "This was a bot" that updates the misclassification KPI.
+- "Owner rules" panel with the rules above as toggles.
+- Seed 10 earlier calls today as example data: humans (Mr. Chen, a landlord), booking agents ("ChatGPT agent for J. Park", "Google AI for a homeowner"), sales agents ("SEO agency bot", "Extended warranty bot"), and one call that was misclassified and corrected. The live demo calls are appended and the KPIs update.
+
+API ROUTES:
+- GET /.well-known/agent-card.json: an A2A-style Agent Card: {"name":"Rivera Plumbing &amp; Heating front desk","description":"Books plumbing and HVAC visits. Agents post a $0.05 refundable USDC hold on Monad; bookings need a $15 deposit.","version":"0.1.0","supportedInterfaces":[{"url":"PUBLIC_URL/a2a","protocolBinding":"HTTP+JSON","protocolVersion":"1.0"}],"capabilities":{"streaming":false},"defaultInputModes":["application/json"],"defaultOutputModes":["application/json"],"skills":[{"id":"book-visit","name":"Book a visit","description":"Quote, hold a slot, collect a deposit","tags":["booking","deposit","x402"]}]}, where PUBLIC_URL comes from the secret PUBLIC_URL.
+- POST /a2a/hello {agent, on_behalf_of, intent}. Intent "book_service" means booking_agent; "sell_services" means sales_agent. Without an "X-PAYMENT-TX" header: HTTP 402 {"classification": ..., "payment_required": {"amount_usd": 0.05, "purpose": "refundable_hold", "asset": "USDC", "network": "eip155:10143", "pay_to": value of the secret BUSINESS_ADDRESS}}. With the header: 200 {"session_id": "S-" plus a random id, "classification": ...}.
+- POST /a2a/book {session_id, issue, zip, window, max_price_usd}. Without the header: HTTP 402 {"offer": {"slot": "Today 4:00 PM", "diagnostic_fee_usd": 89, "policy_note": "2:00 PM is held for human callers by the owner's rules"}, "payment_required": {"amount_usd": 15, "purpose": "deposit", "asset": "USDC", "network": "eip155:10143", "pay_to": BUSINESS_ADDRESS}}. With the header: 200 {"booking_id": "RPH-1042", "slot": "Today 4:00 PM", "status": "confirmed", "hold_refund": {"amount_usd": 0.05}}, and append a "Booking agent" call to the dashboard with the deposit and the receipt link https://testnet.monadvision.com/tx/HASH.
+- Log every /a2a request in an in-memory event list.
+- POST /api/human/reply, POST /api/agent/simulate, POST /api/salesbot/simulate, GET /api/dashboard, POST /api/reset.
+
+Animate new cards in with a short stagger (150-300 ms), so the agent lane visibly races while the human lane feels conversational. Respect prefers-reduced-motion. No login.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-agent">Ashwini · Repl B</span><h3>P2a · Make the two test wallets</h3><span class="when">12:05 · 3 min</span></div><button class="copy" type="button" data-target="p2a">Copy</button></div>
+<pre id="p2a">Create a Node.js + TypeScript project and install the viem library. Add one script, "npm run wallets", that generates two new private keys with viem's generatePrivateKey() and prints for each one a label, the address and the private key. Labels: CALLER (the homeowner's AI agent wallet, which pays) and BUSINESS (the plumber's wallet, which receives). Run it and show me the output. These are throwaway testnet keys; I will store them in Replit Secrets as CALLER_PRIVATE_KEY and BUSINESS_PRIVATE_KEY. Don't build anything else yet.</pre>
+    <p class="note">Copy the two addresses into a note, put the keys in Secrets, and send Amaia the BUSINESS address. Then do the faucets.</p>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-agent">Ashwini · Repl B</span><h3>P2b · Payment service on Monad (Plan mode)</h3><span class="when">12:20 · 15–20 min build</span></div><button class="copy" type="button" data-target="p2b">Copy</button></div>
+<pre id="p2b">Build "dualtone-agent": a small Node.js + Express + TypeScript service using viem. It will play an AI agent (a stand-in for Google Gemini) that books a plumber for a homeowner and pays in USDC on the Monad testnet. For now, build only the payment part and a status page. The keys are in the Secrets CALLER_PRIVATE_KEY and BUSINESS_PRIVATE_KEY.
+
+CHAIN CONFIG (Monad testnet), use viem defineChain:
+- chain id 10143, native currency MON (18 decimals)
+- RPC https://testnet-rpc.monad.xyz (fallback https://rpc.ankr.com/monad_testnet)
+- explorer https://testnet.monadvision.com, transaction links are https://testnet.monadvision.com/tx/HASH
+- USDC (Circle testnet) at 0x534b2f3A21130d7a60830c2Df862319e593943A3 with 6 decimals; use viem's erc20Abi
+- IMPORTANT: Monad charges the gas LIMIT you set, so pass gas: 80000n on ERC-20 transfers.
+
+ROUTES:
+- GET /api/health: MON and USDC balances of both wallets, the chain id and the latest block number.
+- POST /api/deposit/pay {amountUsd, to?, purpose?}: transfer amountUsd USDC (amounts as small as 0.05 must work) from the CALLER wallet to "to" (default: the BUSINESS wallet). Wait for the receipt. Return {purpose, hash, explorerUrl, blockNumber, settledMs, from, to, amountUsd, asset: "USDC", network: "eip155:10143"}, where settledMs is the time from sending to receipt. If the USDC balance is too low or the transfer fails, send a tiny native MON transfer instead and return asset: "MON" with a note.
+- POST /api/refund {amountUsd}: transfer amountUsd USDC from the BUSINESS wallet back to the CALLER wallet (used to return the 5-cent hold). Same response shape.
+- POST /api/reset: send all USDC held by the BUSINESS wallet back to the CALLER wallet so the demo can run again. Return the tx hash.
+- GET /api/last: the last successful payments (keep them in memory).
+- Enable CORS for all origins. Log every request. Never crash: return clear JSON errors.
+
+STATUS PAGE at "/": plain and readable (dark background is fine). Show both wallet addresses, live balances, the last payments with explorer links, and two buttons: "Send $1 test payment" and "Reset (return USDC to caller)".</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-agent">Ashwini · Repl B</span><h3>P4 · The caller agent (agent-to-agent)</h3><span class="when">1:00 · 10–15 min build</span></div><button class="copy" type="button" data-target="p4">Copy</button></div>
+<pre id="p4">Now add the caller agent. Add POST /api/caller/run with body {frontDeskUrl}. It plays an AI agent calling Rivera Plumbing on behalf of a homeowner, using plain HTTP + JSON: an A2A-style handshake and x402-style "payment required" steps. Record every step with a millisecond timestamp relative to the start, and return {steps: [{tMs, from, to, label, json}], payments: [{purpose, hash, explorerUrl, settledMs}], booking, totalMs}.
+
+Steps:
+1. GET {frontDeskUrl}/.well-known/agent-card.json and record the card.
+2. POST {frontDeskUrl}/a2a/hello with {"agent":"Google Gemini (demo stand-in)","on_behalf_of":"homeowner, Somerville MA 02144","intent":"book_service"}. Expect HTTP 402 asking for a $0.05 refundable hold. Record it.
+3. Pay the hold with the same function as /api/deposit/pay (amount and pay_to from payment_required, purpose "hold"). Record hash, explorer link and settledMs.
+4. POST {frontDeskUrl}/a2a/hello again with the header "X-PAYMENT-TX: HASH". Expect 200 with a session_id. Record it.
+5. POST {frontDeskUrl}/a2a/book with {"session_id": ..., "issue":"kitchen sink leak","zip":"02144","window":"today","max_price_usd":150}. Expect 402 with an offer and a $15 deposit. Record it.
+6. Decide: accept if offer.diagnostic_fee_usd is at most max_price_usd. Record the decision as a step.
+7. Pay the deposit (purpose "deposit"). Record it.
+8. POST {frontDeskUrl}/a2a/book again with the header "X-PAYMENT-TX: HASH" and the same body plus {"accept": true}. Expect 200 "confirmed" with hold_refund. Record it.
+9. Refund the hold: send hold_refund.amount_usd USDC from the BUSINESS wallet back to the CALLER wallet (same function as /api/refund). Record it as "Hold refunded by the front desk". In this demo our service signs for both wallets; in production the hold would sit in an escrow contract.
+If the front desk is unreachable or answers something unexpected, return a clear error JSON that includes the steps completed so far. Add a "Run test call" button to the status page with an input for the front desk URL.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-human">Amaia · Repl A</span><h3>P3 · Real AI in the human lane, voice, detection</h3><span class="when">1:20 · 15 min build</span></div><button class="copy" type="button" data-target="p3">Copy</button></div>
+<pre id="p3">Replace the scripted human-lane replies with a real LLM (the same provider that worked in /api/ping-llm, behind one llm() helper). In POST /api/human/reply, send the conversation so far with this system prompt:
+
+"You are an automated assistant answering the phone for Rivera Plumbing &amp; Heating in Somerville, MA, while the owner, Luis, is on a job. You already told the caller that you are automated and that the call is transcribed. Your only job with human callers is to take a clear message and promise a callback. Never book appointments, quote prices or diagnose. Speak warmly and plainly, 1-2 short sentences per reply. If water is actively leaking, tell them to turn the valve under the sink clockwise to shut it off. Callback promise: urgent callers (active leak, no heat, elderly, alone, distressed) within 15 minutes; everyone else within 2 hours. Respond ONLY as JSON: {"reply": string, "message": {"name": string or null, "issue": string or null, "urgency": "low" | "normal" | "high", "callback_by": string or null}, "done": boolean}."
+
+Compute callback_by on the server from the current time (urgent: now + 15 minutes, rounded up to 5 minutes). Validate the JSON with zod. If the LLM fails, takes longer than 4 seconds, or returns invalid JSON, use the scripted reply for that turn so the demo never breaks. When urgency is high, show the urgent message card and the "text sent to caller" card, and put the caller at the top of the dashboard callback list.
+
+Voice: speak the assistant's replies with the browser's speechSynthesis (wait for the voiceschanged event; prefer "Google US English" or "Samantha"; rate 1.05). Add a speaker on/off toggle in the human column header, default on.
+
+Detection: add POST /api/detect {firstUtterance, headers} returning {type: "human" | "booking_agent" | "sales_agent", confidence, reasons[]}. Rules first: an agent card, an "X-Agent-Card" header, or phrases like "automated assistant", "calling on behalf of" or "this call is from Google" mean agent; then booking vs. sales from intent words ("book", "appointment", "quote" vs. "offer", "services", "partnership", "SEO", "warranty"). Otherwise ask the LLM. IMPORTANT: if confidence is below 0.8, return "human". A person wrongly sent to a bot is worse than a bot sent to the owner. Show the result in each lane's badge.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-human">Amaia · Repl A</span><h3>P5 · Connect the real caller agent</h3><span class="when">2:00 · 10 min build</span></div><button class="copy" type="button" data-target="p5">Copy</button></div>
+<pre id="p5">Connect the agent lane to the real caller agent running in our second service. The secret AGENT_URL holds its base URL and PUBLIC_URL holds this app's public URL.
+1. When the presenter clicks "Gemini calls for a homeowner", the server calls POST {AGENT_URL}/api/caller/run with {"frontDeskUrl": PUBLIC_URL}. Replay the returned steps into the agent lane with the existing animation, spaced by their real tMs timestamps, and show the real total time on the big timer.
+2. The receipt card uses the deposit payment's explorerUrl and settledMs, and also links the hold and refund transactions. No "Simulated" label.
+3. If AGENT_URL is missing, the call fails, or it takes longer than 10 seconds, fall back to POST /api/agent/simulate and label the receipt "Simulated payment".
+4. "Reset demo" also calls POST {AGENT_URL}/api/reset (ignore errors).
+5. Optional, only if quick: before answering 200 in /a2a/hello and /a2a/book, verify the X-PAYMENT-TX hash on Monad testnet (chain 10143, RPC https://testnet-rpc.monad.xyz) with viem getTransactionReceipt and check its status is success.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-human">Amaia · Repl A</span><h3>P6 · Projector polish</h3><span class="when">2:15 · 10 min build</span></div><button class="copy" type="button" data-target="p6">Copy</button></div>
+<pre id="p6">Polish for a live demo on a projector. Don't change any behavior that works, and don't change the branding yet.
+- Keyboard shortcuts on the Live calls screen: H starts the human call, 1/2/3 send the three suggested lines, A starts the booking-agent call, S starts the sales-bot call, D opens the dashboard, L goes back to Live calls, R resets the demo. Show them in a small hint line at the bottom.
+- After the agent call finishes, the big timer and the receipt card are the most prominent elements.
+- Every text readable from the back of a room: minimum 18px, strong contrast.
+- Empty states for each lane before a call starts: "Waiting for a call" with its button.
+- No console errors, and the Live calls screen fits 1440x900 without page scrolling.</pre>
+  </div>
+
+  <div class="prompt">
+    <div class="prompt-head"><div class="meta"><span class="pill p-human">Amaia · Repl A</span><h3>P7 · Final name and look (last)</h3><span class="when">2:20 · 5 min build</span></div><button class="copy" type="button" data-target="p7">Copy</button></div>
+<pre id="p7">Final branding pass. Change only src/brand.ts and whatever reads from it: product name "[NEW NAME]", tagline "[TAGLINE]", colors [COLORS], and a simple logo: [DESCRIBE IT]. Don't change layout or behavior. Check that every screen still has readable contrast.</pre>
+    <p class="note">Fill in the brackets first. Keep a distinct color for humans and one for agents; the two-lane screen depends on that contrast.</p>
+  </div>
+</section>
+
+<section id="validate">
+  <p class="eyebrow">Researcher hat · Ashwini · 1:00–1:15</p>
+  <h2>Validation calls: get one number nobody else in the room has</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>How</h3>
+      <ol>
+        <li>Google Maps: “plumber near Somerville MA”. Pick 5 small shops (under 100 reviews).</li>
+        <li>Call each one. Log: did a person pick up, voicemail, or an AI receptionist? How many rings?</li>
+        <li>If a person answers, be upfront: “I’m a Harvard student doing research, 30 seconds?” Then ask: <i>“If Google’s AI called you to book a job, would you be able to tell? Would you take a $15 deposit to hold the slot if the customer’s assistant paid it instantly?”</i></li>
+        <li>Also ask: <i>“How many sales or robocalls do you get in a week?”</i> That tells us whether agent calls are a burden today. Thank them and write down one short quote.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Use it in the pitch</h3>
+      <p>Saturday at lunchtime is a realistic test. If most go to voicemail, Amaia adds one line on slide 2:</p>
+      <pre>“At 1 PM today we called 5 Boston plumbers. [X] reached a person.”</pre>
+      <p>Only use the real result. If a plumber gives a usable quote, it replaces the second sentence of the problem line in the script.</p>
+    </div>
+  </div>
+</section>
+
+<section id="fallbacks">
+  <p class="eyebrow">If something breaks</p>
+  <h2>Fallbacks, decided in advance</h2>
+  <div class="tbl"><table>
+    <tr><th style="width:30%">Risk</th><th style="width:16%">Decide by</th><th>Fallback</th></tr>
+    <tr><td>Replit AI Integrations isn’t included in the trial</td><td>12:05</td><td>Free Gemini key (3 min). If that also fails, the scripted replies already work.</td></tr>
+    <tr><td>Monad faucet is rate-limited or has requirements</td><td>12:30</td><td>Ask the Monad Foundation table for test MON; try Alchemy’s faucet; MON is only needed for gas.</td></tr>
+    <tr><td>No test USDC from Circle’s faucet</td><td>1:00</td><td>The payment service sends native MON instead (already in P2b). One run needs $15.05 of USDC; reset returns it. On stage say “digital dollars” only if it is USDC; otherwise say “settled on Monad”.</td></tr>
+    <tr><td>No real transaction at all</td><td>1:15</td><td>Run the scripted agent lane with the honest “Simulated payment” label, and show the Repl B status page. Don’t claim a live payment you don’t have.</td></tr>
+    <tr><td>The two Repls won’t talk</td><td>2:15</td><td>Repl A falls back to simulation after 8 s; plus the backup video.</td></tr>
+    <tr><td>LLM is slow on stage</td><td>Built in</td><td>4-second timeout, then the scripted reply.</td></tr>
+    <tr><td>Replit Agent breaks a working feature</td><td>Anytime</td><td>Roll back to the last checkpoint. Don’t argue with it.</td></tr>
+    <tr><td>Venue Wi-Fi fails during demos</td><td>3:45</td><td>Phone hotspot; the backup video saved locally on both laptops.</td></tr>
+  </table></div>
+  <div class="callout">Before going on stage: press Reset demo, check the status page shows at least 15 USDC in the CALLER wallet, open Live calls in a fresh Chrome tab, and turn up the volume.</div>
+</section>
+
+<section id="script">
+  <p class="eyebrow">90 seconds · about 220 words</p>
+  <h2>Pitch script, split between you</h2>
+  <div class="script">
+    <div class="line"><span class="t">0:00–0:12</span><span class="who a">Amaia</span><p>“Last month, Google let Gemini phone businesses for you, from your own number. So the next call a plumber misses may be an AI, shopping five plumbers at once.”<span class="cue">Slide 1, cover.</span></p></div>
+    <div class="line"><span class="t">0:12–0:22</span><span class="who a">Amaia</span><p>“Already, 44% of callers never reach a person. And none of the 14 AI receptionists we checked treats an AI caller as a customer.”<span class="cue">Slide 2. Pause one beat on the insight bar.</span></p></div>
+    <div class="line"><span class="t">0:22–0:40</span><span class="who a">Amaia</span><p>“Dualtone sorts three kinds of callers. Mrs. Alvarez, 78, has a leak. Dualtone rings Luis first; he’s on a job, so a disclosed assistant takes her message, texts her he’ll call by 2:15, and puts her at the top of his list.”<span class="cue">Slide 3, then the live app. Ashwini drives: H, 1, 2.</span></p></div>
+    <div class="line"><span class="t">0:40–1:02</span><span class="who b">Ashwini</span><p>“Now Gemini calls to book. It posts a refundable 5-cent hold, gets a quote and slot as data, and pays a $15 deposit on Monad, settled in under a second. Hold refunded. A sales bot won’t pay the hold, so it never reaches Luis.”<span class="cue">Amaia drives: A, click the receipt link and hold one second, then S.</span></p></div>
+    <div class="line"><span class="t">1:02–1:14</span><span class="who b">Ashwini</span><p>“Big tech is building payment rails for agents; nobody is building the front desk that receives them. And agents get speed, not priority: owners decide which slots stay with people.”<span class="cue">Slide 4. The last sentence is the fairness line.</span></p></div>
+    <div class="line"><span class="t">1:14–1:20</span><span class="who b">Ashwini</span><p>“96,000 plumbing and HVAC shops, at $199 a month: a $230 million start.”<span class="cue">Slide 5.</span></p></div>
+    <div class="line"><span class="t">1:20–1:30</span><span class="who a">Amaia</span><p>“Ashwini invests in fintech at JPMorgan; I built AI products at Google. We’d love introductions to plumbers for our pilot.”</p></div>
+  </div>
+  <p class="lede">About 205 words, roughly 85 seconds, which leaves a few seconds for clicks. Over 90 in rehearsal? Cut “shopping five plumbers at once” first. Keep the fairness line. Speak the numbers slowly; they are what judges write down. The product name is a placeholder: if you rename it in P7, change it here and in the deck too.</p>
+</section>
+
+<section id="qa">
+  <p class="eyebrow">Be ready</p>
+  <h2>Likely judge questions</h2>
+  <div class="qa">
+    <details><summary>Why Monad and not Stripe?</summary><p>The 5-cent refundable hold. A card payment carries about 30¢ in fixed fees, so a 5¢ hold that is refunded on every legitimate call can’t exist on cards. On Monad it costs a fraction of a cent and settles in under a second. Spam bots that won’t pay never reach the owner, and every hold leaves a record of which agents pay, book and show up. Deposits could also run on cards later; the hold can’t.</p></details>
+    <details><summary>How do you detect agents that don’t say they’re agents?</summary><p>Three signals: an agent card handshake, disclosure (Google’s agent announces itself at the start of the call), and a classifier on the first lines. The errors aren’t equal, so when confidence is below 0.8 we treat the caller as human: a bot reaching the owner is annoying, a person reaching a bot breaks our promise. The owner can mark any call “this was a person”, and we report the misclassification rate on the dashboard.</p></details>
+    <details><summary>Doesn’t screening add friction for people?</summary><p>There is no screening question and no phone tree. Classification is passive, from the first seconds of the call. Humans ring straight through to the owner; the assistant only picks up when he can’t.</p></details>
+    <details><summary>Can the AI commit the business to something?</summary><p>Only within the owner’s rules: published prices, open slots that aren’t held for people, and the $15 deposit. Custom quotes, jobs over $500 and after-hours emergencies need the owner’s approval. In the product, availability comes from the live calendar, so the agent never guesses.</p></details>
+    <details><summary>What about recording and AI-disclosure laws?</summary><p>Massachusetts and California require every party’s consent to record. The greeting says it is an automated assistant and that the call is transcribed, and that is built in from the first version.</p></details>
+    <details><summary>Is holding stablecoins a money-transmission problem?</summary><p>Possibly, which is why in production the hold and deposits would run through a licensed stablecoin payments provider or an escrow contract, not through our own wallet. Today’s demo uses testnet funds.</p></details>
+    <details><summary>Doesn’t a fast lane for agents favor people who can afford an AI assistant?</summary><p>It would if speed meant priority, so it doesn’t. The owner sets the booking rules: hold same-day slots for human callers, put urgent callers first whatever the channel. Only agents put down a deposit, because they shop many plumbers at once and can no-show at scale. People who call never pay up front. In a 2026 Lorikeet survey, booking was the one task where more consumers were uncomfortable than comfortable with an AI acting for them, so the human lane is the product too, not a fallback.</p></details>
+    <details><summary>Why would a homeowner pay in crypto?</summary><p>They don’t. Human callers never pay anything up front. Only agents post the hold and the $15 deposit, from their own wallet in USDC, a dollar stablecoin, and the plumber sees dollars. Agents can’t click a texted payment link, so they need a payment they can make themselves.</p></details>
+    <details><summary>Why won’t Google or Yelp just build this, or Goodcall add an “agent mode”?</summary><p>Google, OpenAI, Visa and Coinbase build rails: A2A, AP2, ACP, x402. None of them answers a three-person shop’s phone or holds its calendar. An incumbent receptionist could add an agent mode, so our moat is what’s hard to copy: detection accuracy, measured and corrected by owners, and the reputation data from holds about which agents pay, book and show up.</p></details>
+    <details><summary>If Gemini calls from the customer’s number, how do you detect it?</summary><p>Google’s agent announces that it is automated at the start of the call, and agents that support A2A can fetch our agent card. We also run a classifier on the first lines. Agents have a reason to identify themselves: the fast lane books them faster.</p></details>
+    <details><summary>How many agent calls do plumbers actually get?</summary><p>Nobody publishes that number yet, which is part of the opportunity. Google has phoned US businesses for prices since July 2025 and added more categories in 2026. Our pilot will measure it, and the dashboard counts it from day one.</p></details>
+    <details><summary>What do you charge, and why would an owner buy?</summary><p>$199 a month, flat, cancel anytime, plus 0.5% on deposits; holds kept from spam bots go to the owner. The top complaints about current AI receptionists are surprise billing and cancellation traps, so simple pricing is part of the product. Why buy: 44% of callers never reach a person, a missed call goes to the next plumber, and the owner stops losing his day to sales bots. Our validation calls today, and the pilot, should put a dollar figure on a missed job before we claim one.</p></details>
+  </div>
+</section>
+
+<section id="research">
+  <p class="eyebrow">Research behind the deck</p>
+  <h2>What we found, and where it came from</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Competitors (checked October 24)</h3>
+      <ul>
+        <li><b>14 SMB AI receptionists</b> (Goodcall, Slang.ai, Smith.ai, Ruby, Rosie, Dialzara, Upfirst, My AI Front Desk, Numa, Podium, Weave, Yelp, ServiceTitan, and others): none treats AI agents as a separate, machine-readable channel.</li>
+        <li><b>Deposits in the call</b>: only Smith.ai and Ruby, by hand; Weave says “coming soon”. Venues, restaurants and vets take deposits by web form or texted link.</li>
+        <li><b>Pindrop BotStopper</b> (Sep 2026) detects AI callers, but for enterprises, and it blocks them.</li>
+        <li><b>Top complaints</b> in 1–3 star reviews: billing and cancellation traps, slow support, older callers hanging up on bots.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Why now</h3>
+      <ul>
+        <li>Google “Ask for Me” / AI calling: rolled out to all US users on July 16, 2025; plumbers among the businesses called.</li>
+        <li>Gemini “Call for Me”: reported September 24, 2026, dials from the user’s own number.</li>
+        <li>Standards: A2A v1.0 (Linux Foundation), AP2 (now at FIDO), ACP (OpenAI and Stripe, beta), x402 (Coinbase) with a Monad facilitator supporting testnet.</li>
+        <li>Monad mainnet since November 24, 2025; finality about 600 ms; a USDC transfer costs a fraction of a cent.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><b>Check before you quote it:</b> the 44% figure is Invoca’s 2026 benchmark across their own customers, not all businesses. Don’t use the often-repeated “62% of calls go unanswered”: it traces back to a 411 Locals study of 85 businesses, probably from 2016, that counted voicemail as unanswered. The Gemini “own number” detail comes from one TechCrunch report. “34% of SMBs use AI phone handling” is a vendor estimate (Ainora). The $199 price and the deposit volume are our assumptions, and the deck says so. We have no data yet on what share of plumbers’ calls are agents; the validation calls and the pilot are how we get it.</div>
+  <ol class="sources">
+    <li><a href="https://www.marketingdive.com/press-release/20260710-new-invoca-data-finds-the-best-leads-now-start-in-chatgpt/" target="_blank" rel="noopener">Invoca 2026 benchmarks (Marketing Dive)</a></li>
+    <li><a href="https://techcrunch.com/2025/07/16/google-rolls-out-ai-powered-business-calling-feature-brings-gemini-2-5-pro-to-ai-mode" target="_blank" rel="noopener">TechCrunch: Google AI business calling, Jul 2025</a></li>
+    <li><a href="https://techcrunch.com/2026/09/24/google-tests-letting-gemini-make-phone-calls-initially-for-us-pixel-owners/" target="_blank" rel="noopener">TechCrunch: Gemini makes phone calls, Sep 2026</a></li>
+    <li><a href="https://support.google.com/business/answer/7690269" target="_blank" rel="noopener">Google Business Profile: automated call settings</a></li>
+    <li><a href="https://pulse2.com/pindrop-launches-botstopper-to-detect-ai-voice-agents-in-real-time/" target="_blank" rel="noopener">Pindrop BotStopper launch</a></li>
+    <li><a href="https://www.trustpilot.com/review/goodcall.com" target="_blank" rel="noopener">Goodcall reviews (Trustpilot)</a></li>
+    <li><a href="https://www.getweave.com/ai-receptionist" target="_blank" rel="noopener">Weave AI receptionist</a></li>
+    <li><a href="https://www2.census.gov/programs-surveys/susb/tables/2022/us_state_6digitnaics_2022.xlsx" target="_blank" rel="noopener">Census SUSB 2022 (NAICS 238220)</a></li>
+    <li><a href="https://a2a-protocol.org/latest/specification/" target="_blank" rel="noopener">A2A specification</a></li>
+    <li><a href="https://docs.monad.xyz/guides/x402.md" target="_blank" rel="noopener">Monad x402 guide</a></li>
+    <li><a href="https://docs.monad.xyz/developer-essentials/testnet.md" target="_blank" rel="noopener">Monad testnet details</a></li>
+    <li><a href="https://developers.circle.com/stablecoins/usdc-contract-addresses" target="_blank" rel="noopener">Circle USDC contract addresses</a></li>
+    <li><a href="https://docs.replit.com/replitai/replit-ai-integrations" target="_blank" rel="noopener">Replit AI Integrations</a></li>
+    <li><a href="https://stripe.com/pricing" target="_blank" rel="noopener">Stripe pricing</a> · <a href="https://squareup.com/us/en/payments/our-fees" target="_blank" rel="noopener">Square fees</a></li>
+  </ol>
+</section>
+
+<footer>Dualtone · built by Amaia Aguilar and Ashwini Krishnamurthy for the HBS × MIT Hackathon, October 24, 2026.</footer>
+</div>
+
+<script>
+document.querySelectorAll('button.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.dataset.target);
+    var text = el.textContent;
+    function flash(label) { btn.textContent = label; btn.classList.add('done'); setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1600); }
+    function selectFallback() {
+      var r = document.createRange(); r.selectNodeContents(el);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      flash('Selected, press ⌘C');
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () { flash('Copied'); }, selectFallback);
+    } catch (e) { selectFallback(); }
+  });
+});
+document.querySelectorAll('.checklist input').forEach(function (box) {
+  try { box.checked = localStorage.getItem('dt-' + box.id) === '1'; } catch (e) {}
+  box.addEventListener('change', function () { try { localStorage.setItem('dt-' + box.id, box.checked ? '1' : '0'); } catch (e) {} });
+});
+</script>

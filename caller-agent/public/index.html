@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caller agent · status</title>
+<style>
+  :root { --bg: #10141C; --surface: #181E2A; --line: #2A3242; --fg: #F1EEE8; --muted: #AEB6C6; --agent: #7FA6FF; --ok: #5FD39A; --bad: #FF8A80; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; display: flex; flex-direction: column; gap: 24px; }
+  h1 { margin: 0; font-size: 28px; }
+  p.sub { margin: 4px 0 0; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; }
+  .big { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button { font: 600 14px system-ui, sans-serif; border: 0; border-radius: 8px; padding: 9px 14px; background: var(--agent); color: #0B1020; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; cursor: wait; }
+  input { font: 14px system-ui, sans-serif; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); min-width: 260px; flex: 1; }
+  a { color: var(--agent); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12.5px; max-height: 320px; overflow: auto; background: var(--bg); padding: 12px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Caller agent</h1>
+    <p class="sub">Stand-in for an AI assistant that books a plumber and pays on Monad testnet (chain 10143). Testnet funds only.</p>
+  </div>
+  <div class="grid" id="wallets"><div class="card">Loading balances…</div></div>
+  <div class="card">
+    <span class="label">Actions</span>
+    <div class="row">
+      <button id="pay1">Send $1 test payment</button>
+      <button class="secondary" id="reset">Reset (return USDC to caller)</button>
+    </div>
+    <div class="row">
+      <input id="fd" aria-label="Front desk URL" value="http://localhost:3000">
+      <button id="run">Run test call</button>
+    </div>
+    <pre id="out" hidden></pre>
+  </div>
+  <div class="card">
+    <span class="label">Last payments</span>
+    <table><thead><tr><th>Purpose</th><th>Amount</th><th>Settled</th><th>Transaction</th></tr></thead><tbody id="last"></tbody></table>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const out = $('out');
+function show(obj) { out.hidden = false; out.textContent = JSON.stringify(obj, null, 2); }
+async function post(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  return r.json();
+}
+async function refresh() {
+  const h = await fetch('/api/health').then((r) => r.json());
+  const w = $('wallets');
+  w.innerHTML = '';
+  for (const name of ['caller', 'business']) {
+    const d = h[name];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = d
+      ? `<span class="label">${name === 'caller' ? 'Caller agent wallet (pays)' : 'Business wallet (receives)'}</span>
+         <span class="mono">${d.address}</span>
+         <div class="row"><span class="big">${d.usdc ?? '–'} USDC</span><span>${d.mon != null ? d.mon.toFixed(4) : '–'} MON</span></div>
+         ${d.error ? `<span class="bad">${d.error}</span>` : ''}`
+      : `<span class="label">${name}</span><span class="bad">No key. Run “npm run wallets”.</span>`;
+    w.appendChild(card);
+  }
+  const last = await fetch('/api/last').then((r) => r.json());
+  $('last').innerHTML = last.map((p) => `<tr><td>${p.purpose}</td><td>${p.amountUsd} ${p.asset}</td><td>${p.settledMs} ms</td><td><a href="${p.explorerUrl}" target="_blank" rel="noopener">${p.hash.slice(0, 10)}…</a></td></tr>`).join('') || '<tr><td colspan="4">None yet</td></tr>';
+}
+async function act(btn, fn) {
+  btn.disabled = true;
+  try { show(await fn()); } catch (e) { show({ error: e.message }); }
+  btn.disabled = false;
+  refresh();
+}
+$('pay1').onclick = () => act($('pay1'), () => post('/api/deposit/pay', { amountUsd: 1, purpose: 'test' }));
+$('reset').onclick = () => act($('reset'), () => post('/api/reset'));
+$('run').onclick = () => act($('run'), () => post('/api/caller/run', { frontDeskUrl: $('fd').value.replace(/\/$/, '') }));
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

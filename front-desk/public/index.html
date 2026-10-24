@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Front desk</title>
+<link rel="stylesheet" href="styles.css">
+<script src="brand.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><b id="brandName">Dualtone</b><span id="brandTagline"></span></div>
+  <div class="biz"><span id="bizName">Rivera Plumbing &amp; Heating</span><span class="dim">· Somerville, MA · Luis is on a job</span></div>
+  <nav class="tabs" aria-label="Views">
+    <a href="#live" id="tabLive">Live calls</a>
+    <a href="#dashboard" id="tabDash">Owner dashboard</a>
+  </nav>
+  <button class="ghost" id="resetBtn" title="Reset demo (R)">Reset demo</button>
+</header>
+
+<main id="live" class="live">
+  <section class="lane human" aria-labelledby="humanTitle">
+    <div class="lane-head">
+      <div><p class="eyebrow">Humans reach a human</p><h2 id="humanTitle">Person calling</h2></div>
+      <div class="row">
+        <button class="icon" id="speakBtn" aria-pressed="true" title="Read replies aloud">🔊 Voice on</button>
+        <button class="primary" id="humanBtn">Mrs. Alvarez calls <kbd>H</kbd></button>
+      </div>
+    </div>
+    <div class="callcard" id="humanCard" hidden>
+      <div class="who"><b>Mrs. Alvarez</b><span class="dim">(617) 555-0142</span></div>
+      <span class="badge" id="humanBadge">Identifying caller…</span>
+      <span class="timer" id="humanTimer">0:00</span>
+      <p class="status" id="humanStatus"></p>
+    </div>
+    <div class="empty" id="humanEmpty">Waiting for a call</div>
+    <div class="transcript" id="transcript" aria-live="polite"></div>
+    <div class="cards" id="humanCards"></div>
+    <div class="suggest" id="suggest" hidden>
+      <button data-line="0"><kbd>1</kbd> Water under my sink</button>
+      <button data-line="1"><kbd>2</kbd> I’m 78 and live alone</button>
+      <button data-line="2"><kbd>3</kbd> Thank you, dear</button>
+      <form id="freeForm"><input id="freeText" aria-label="Type what the caller says" placeholder="Or type what the caller says…" autocomplete="off"></form>
+    </div>
+  </section>
+
+  <section class="lane agent" aria-labelledby="agentTitle">
+    <div class="lane-head">
+      <div><p class="eyebrow">Booking agents get a fast lane</p><h2 id="agentTitle">AI agent calling</h2></div>
+      <button class="primary" id="agentBtn">Gemini calls for a homeowner <kbd>A</kbd></button>
+    </div>
+    <div class="callcard" id="agentCard" hidden>
+      <div class="who"><b>Google Gemini</b><span class="dim">for a homeowner · 02144</span></div>
+      <span class="badge" id="agentBadge">Identifying caller…</span>
+      <div class="race"><span class="bigtime" id="agentTimer">0.0 s</span><span class="dim">Typical phone call: 3 min 40 s</span></div>
+    </div>
+    <div class="empty" id="agentEmpty">Waiting for a call</div>
+    <ol class="stream" id="stream" aria-live="polite"></ol>
+    <div class="receipt" id="receipt" hidden></div>
+  </section>
+
+  <section class="spamrow" aria-labelledby="spamTitle">
+    <div><p class="eyebrow" id="spamTitle">Sales &amp; spam bots</p><button class="secondary" id="salesBtn">Sales bot calls <kbd>S</kbd></button></div>
+    <div class="spamflow" id="spamflow"><span class="dim">Bots are asked for the same 5¢ refundable hold. They don’t pay, so they never reach the owner.</span></div>
+  </section>
+
+  <p class="hints">Keys: <kbd>H</kbd> human call · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> caller lines · <kbd>A</kbd> agent call · <kbd>S</kbd> sales bot · <kbd>D</kbd> dashboard · <kbd>L</kbd> live · <kbd>R</kbd> reset</p>
+</main>
+
+<main id="dashboard" class="dash" hidden>
+  <div class="kpis" id="kpis"></div>
+  <div class="dash-grid">
+    <div class="col">
+      <section class="panel"><h3>Callback list</h3><ul class="callbacks" id="callbacks"></ul></section>
+      <section class="panel"><h3>Owner rules</h3><div id="rules"></div><p class="fine">Agents may quote published prices, book open slots that aren’t held, and take the deposit. Custom quotes, jobs over $500 and after-hours emergencies need Luis’s approval.</p></section>
+    </div>
+    <section class="panel log"><h3>Today’s calls</h3><div class="tablewrap"><table><thead><tr><th>Time</th><th>Caller</th><th>Type</th><th>Outcome</th><th>Deposit</th><th></th></tr></thead><tbody id="log"></tbody></table></div></section>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
