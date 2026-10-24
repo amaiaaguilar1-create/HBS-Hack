@@ -63,7 +63,7 @@ export async function pay({ from = 'caller', to, amountUsd, purpose = 'payment' 
   let hash;
   const usdcBalance = await pub.readContract({ address: USDC, abi: erc20Abi, functionName: 'balanceOf', args: [acct.address] });
   if (usdcBalance >= amount) {
-    hash = await wallet.writeContract({ address: USDC, abi: erc20Abi, functionName: 'transfer', args: [to, amount], gas: 80000n });
+    hash = await wallet.writeContract({ address: USDC, abi: erc20Abi, functionName: 'transfer', args: [to, amount], gas: 150000n });
   } else {
     asset = 'MON';
     note = `Not enough test USDC in the ${from} wallet, so this sent 0.001 MON instead.`;
