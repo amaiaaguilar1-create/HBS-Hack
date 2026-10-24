@@ -285,7 +285,7 @@ Paste one at a time. Use Plan mode for P1 and P2b. If Agent breaks something, ro
 | 0:00 | Amaia | "Last month, Google let Gemini phone businesses for you, from your own number. So the next call a plumber misses may be an AI, shopping five plumbers at once." |
 | 0:12 | Amaia | "Nearly half of calls to home-service shops never reach a person. Google's AI calls to plumbers jumped 650% in a month, and a third went unanswered." |
 | 0:22 | Amaia | "Dualtone sorts three kinds of callers. Mrs. Alvarez, 78, has a leak. Dualtone rings Luis first; he's on a job, so a disclosed assistant takes her message, texts her he'll call by 2:15, and puts her at the top of his list." *(Ashwini drives: H, 1, 2)* |
-| 0:40 | Ashwini | "Now Gemini calls to book. It posts a refundable 5-cent hold, gets a quote and slot as data, and pays a $15 deposit on Monad, settled in under a second. Hold refunded. A sales bot won't pay the hold, so it never reaches Luis." *(Amaia drives: A, receipt link, S)* |
+| 0:40 | Ashwini | "This is Meta's new Muse agent, live. It got a quote from our plumber as data, and it asked me first. Yes, book it. A refundable 5-cent hold, a $15 deposit on Monad, settled in under a second, hold returned. A sales bot? It won't pay the hold, so it never reaches Luis." *(Amaia drives: A, receipt link, S)* |
 | 1:02 | Ashwini | "Big tech is building payment rails for agents; nobody is building the front desk that receives them. And agents get speed, not priority: owners decide which slots stay with people." |
 | 1:14 | Ashwini | "96,000 plumbing and HVAC shops, at $199 a month: a $230 million start." |
 | 1:20 | Amaia | "Ashwini invests in fintech at JPMorgan; I built AI products at Google. We'd love introductions to plumbers for our pilot." |
