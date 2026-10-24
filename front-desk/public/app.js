@@ -16,13 +16,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- views -----------------------------------------------------------------------------
 function showView() {
-  const dash = location.hash === '#dashboard';
-  $('live').hidden = dash;
-  $('dashboard').hidden = !dash;
-  document.body.classList.toggle('on-dash', dash);
-  $('tabLive').classList.toggle('active', !dash);
-  $('tabDash').classList.toggle('active', dash);
-  if (dash) loadDashboard();
+  const view = ({ '#dashboard': 'dashboard', '#live': 'live' })[location.hash] || 'stage';
+  for (const v of ['stage', 'live', 'dashboard']) $(v).hidden = v !== view;
+  document.body.classList.toggle('on-dash', view === 'dashboard');
+  document.body.classList.toggle('on-stage', view === 'stage');
+  $('tabStage').classList.toggle('active', view === 'stage');
+  $('tabLive').classList.toggle('active', view === 'live');
+  $('tabDash').classList.toggle('active', view === 'dashboard');
+  if (view === 'dashboard') loadDashboard();
 }
 window.addEventListener('hashchange', showView);
 
@@ -286,13 +287,14 @@ document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (k === 'd') location.hash = '#dashboard';
   else if (k === 'l') location.hash = '#live';
+  else if (k === 't') location.hash = '#stage';
   else if (k === 'r') resetDemo();
-  else if (location.hash === '#dashboard') return;
+  else if (location.hash !== '#live') return;   // stage keys live in stage.js
   else if (k === 'h') startHuman();
   else if (k === 'a') startAgent();
   else if (k === 's') startSales();
   else if (['1', '2', '3'].includes(k)) say(LINES[Number(k) - 1]);
 });
 
-if (!location.hash) history.replaceState(null, '', '#live');
+if (!location.hash) history.replaceState(null, '', '#stage');
 showView();

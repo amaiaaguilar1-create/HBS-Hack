@@ -12,11 +12,30 @@
   <div class="brand"><b id="brandName">Dualtone</b><span id="brandTagline"></span></div>
   <div class="biz"><span id="bizName">Rivera Plumbing &amp; Heating</span><span class="dim">· Somerville, MA · Luis is on a job</span></div>
   <nav class="tabs" aria-label="Views">
-    <a href="#live" id="tabLive">Live calls</a>
+    <a href="#stage" id="tabStage">Stage</a>
+    <a href="#live" id="tabLive">All lanes</a>
     <a href="#dashboard" id="tabDash">Owner dashboard</a>
   </nav>
   <button class="ghost" id="resetBtn" title="Reset demo (R)">Reset demo</button>
 </header>
+
+<main id="stage" class="stage" hidden>
+  <aside class="tally" aria-label="Today at Rivera Plumbing">
+    <p class="eyebrow">Today</p>
+    <div class="t-row h"><span class="n" id="tHumans">0</span><span class="l">people reached a person</span></div>
+    <div class="t-row a"><span class="n" id="tAgents">0</span><span class="l">bookings made by AI agents</span></div>
+    <div class="t-row s"><span class="n" id="tSpam">0</span><span class="l">sales bots blocked</span></div>
+    <p class="line-note">Rivera Plumbing &amp; Heating<br><span id="lineNumber">Line open</span></p>
+  </aside>
+  <section class="focus" aria-live="polite" aria-atomic="false">
+    <p class="kicker" id="sKicker">Waiting for the next call</p>
+    <h1 class="verdict" id="sVerdict">Line open</h1>
+    <p class="who" id="sWho">People reach a person. AI agents get a fast lane. Sales bots pay to waste your time.</p>
+    <ol class="track" id="sTrack"></ol>
+    <div class="finale" id="sFinale" hidden></div>
+  </section>
+  <footer class="ticker" id="sTicker" aria-hidden="true"></footer>
+</main>
 
 <main id="live" class="live">
   <section class="lane human" aria-labelledby="humanTitle">
@@ -79,5 +98,6 @@
 </main>
 
 <script src="app.js"></script>
+<script src="stage.js"></script>
 </body>
 </html>

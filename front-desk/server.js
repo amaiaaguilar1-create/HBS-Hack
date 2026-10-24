@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { createPublicClient, defineChain, http } from 'viem';
 import { business, callbackBy, clock, defaultRules, freshCalls, kpis, newId } from './data.js';
 import { llmJSON, provider } from './llm.js';
+import { mountMcp } from './mcp.js';
+import { mountPhone } from './phone.js';
+import QRCode from 'qrcode';
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_URL = (process.env.PUBLIC_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
@@ -147,26 +150,28 @@ app.post('/a2a/book', async (req, res) => {
 });
 
 // ---- running the demo agents ---------------------------------------------------------------
-function newRun(kind) {
+const latest = {};   // kind -> latest run id (the live screen follows these)
+function newRun(kind, extra = {}) {
   const id = newId('run');
-  const run = { id, kind, t0: Date.now(), events: [], done: false, simulated: false, payments: [] };
+  const run = { id, kind, t0: Date.now(), events: [], done: false, simulated: false, payments: [], agentName: 'Google Gemini', source: 'demo', ...extra };
   runs.set(id, run);
+  latest[kind] = id;
   return run;
 }
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Used when the caller-agent service or the chain is unavailable. Clearly labelled as simulated.
-async function simulateBooking(run, reason) {
-  run.events = [];
-  run.t0 = Date.now();
+async function simulateBooking(run, reason, { reset = true } = {}) {
+  if (reset) { run.events = []; run.t0 = Date.now(); }
+  const offset = Date.now() - run.t0;
   run.simulated = true;
   run.note = reason;
   const fake = 'simulated';
-  const hello = { agent: 'Google Gemini (demo stand-in)', on_behalf_of: 'homeowner, Somerville MA 02144', intent: 'book_service' };
-  const steps = [
+  const hello = { agent: run.agentName, on_behalf_of: 'homeowner, Somerville MA 02144', intent: 'book_service' };
+  let steps = [
     [120, 'out', 'Served our agent card', agentCard()],
-    [260, 'in', 'Hello from Google Gemini (demo stand-in), booking for a homeowner', hello],
+    [260, 'in', `Hello from ${run.agentName}, booking for a homeowner`, hello],
     [380, 'out', `Booking agent · refundable hold required: $${business.holdUsd.toFixed(2)} (HTTP 402)`, { classification: 'booking_agent', payment_required: { amount_usd: business.holdUsd, purpose: 'refundable_hold', asset: 'USDC', network: NETWORK, pay_to: BUSINESS_ADDRESS } }],
     [900, 'in', `Hold paid · $${business.holdUsd.toFixed(2)} (simulated)`, { tx: fake }],
     [1000, 'out', 'Session open', { session_id: 'S-sim', classification: 'booking_agent' }],
@@ -174,6 +179,7 @@ async function simulateBooking(run, reason) {
     [1300, 'out', `Offer: ${offer().slot} · $${business.visitFeeUsd} visit · $${business.depositUsd} deposit required (HTTP 402)`, { offer: offer() }],
     [1950, 'in', `Deposit paid · $${business.depositUsd}.00 (simulated)`, { tx: fake }],
   ];
+  if (!reset) steps = steps.slice(1).map(([at, ...rest]) => [at + offset, ...rest]);
   for (const [at, dir, label, json] of steps) {
     await wait(Math.max(0, at - (Date.now() - run.t0)));
     emit(run, dir, label, json);
@@ -186,29 +192,103 @@ async function simulateBooking(run, reason) {
   run.done = true;
 }
 
+// Runs the booking agent (caller-agent service) against our own A2A endpoints; falls back to a labelled simulation.
+async function runBooking(run, request = {}, { resetOnFallback = true } = {}) {
+  try {
+    const r = await fetch(`${AGENT_URL}/api/caller/run`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ frontDeskUrl: PUBLIC_URL, runId: run.id, agentName: run.agentName, request }),
+      signal: AbortSignal.timeout(25000),
+    });
+    const result = await r.json();
+    if (!r.ok) throw new Error(result.error || `caller agent returned ${r.status}`);
+    run.payments = result.payments || [];
+    run.booking = result.booking;
+    const refund = run.payments.find((p) => p.purpose === 'refund');
+    if (refund) emit(run, 'out', `Hold refunded · $${refund.amountUsd.toFixed(2)}`, refund, { txUrl: refund.explorerUrl, purpose: 'refund' });
+    run.done = true;
+  } catch (e) {
+    console.warn('Live agent run failed, simulating:', e.message);
+    await simulateBooking(run, `Live payment unavailable: ${e.message}`, { reset: resetOnFallback });
+  }
+  return run;
+}
+
 app.post('/api/agent/start', (req, res) => {
   const run = newRun('booking');
   res.json({ runId: run.id });
+  runBooking(run);
+});
+
+app.get('/api/live', (req, res) => res.json(latest));
+
+// QR code for on-chain receipts, so judges can scan the transaction from their seats.
+app.get('/api/qr.svg', async (req, res) => {
+  const data = String(req.query.data || '');
+  if (!/^https:\/\/testnet\.monadvision\.com\/tx\/0x[0-9a-fA-F]{64}$/.test(data)) return res.status(400).send('Only Monad explorer links');
+  res.type('image/svg+xml').send(await QRCode.toString(data, { type: 'svg', margin: 0, color: { dark: '#10141C', light: '#FFFFFF' } }));
+});
+
+// Rehearsal stand-in for a real phone call from a person (labelled simulated on screen).
+app.post('/api/phone/simulate', (req, res) => {
+  const run = newRun('phone', { source: 'simulated', caller: '(617) 555-0142', classification: null });
+  res.json({ runId: run.id });
   (async () => {
-    try {
-      const r = await fetch(`${AGENT_URL}/api/caller/run`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ frontDeskUrl: PUBLIC_URL, runId: run.id }),
-        signal: AbortSignal.timeout(25000),
-      });
-      const result = await r.json();
-      if (!r.ok) throw new Error(result.error || `caller agent returned ${r.status}`);
-      run.payments = result.payments || [];
-      run.booking = result.booking;
-      const refund = run.payments.find((p) => p.purpose === 'refund');
-      if (refund) emit(run, 'out', `Hold refunded · $${refund.amountUsd.toFixed(2)}`, refund, { txUrl: refund.explorerUrl, purpose: 'refund' });
-      run.agentTotalMs = result.totalMs;
-      run.done = true;
-    } catch (e) {
-      console.warn('Live agent run failed, simulating:', e.message);
-      await simulateBooking(run, `Live payment unavailable: ${e.message}`);
-    }
+    emit(run, 'in', `Incoming call from ${run.caller}`, null);
+    await wait(700);
+    emit(run, 'out', 'Answered: “Rivera Plumbing, automated assistant, this call may be transcribed.”', null);
+    await wait(1600);
+    emit(run, 'in', 'Caller: “Hi, there’s water coming out from under my kitchen sink.”', null, { transcript: true });
+    await wait(500);
+    run.classification = 'human';
+    emit(run, 'out', 'Person on the line: ringing Luis now', { type: 'human' }, { classification: 'human' });
+    calls.push({ id: newId('c'), time: clock(), caller: `Phone · ${run.caller}`, type: 'human', outcome: 'Transferred live to Luis', humanReached: true, live: true });
+    await wait(400);
+    emit(run, 'out', 'Transferring to Luis…', null);
+    await wait(2200);
+    emit(run, 'out', 'Luis picked up · person to person', null, { connected: true });
+    run.done = true;
   })();
+});
+
+// ---- MCP connector for consumer agents (e.g. Meta Muse) -----------------------------------
+let mcpRun = null;
+const agentHooks = {
+  info: () => [
+    `${business.name}, ${business.city}. Owner: ${business.owner}. Plumbing and heating repairs.`,
+    `Diagnostic visit: $${business.visitFeeUsd}. Open slot: ${offer().slot}.`,
+    `Booking agents post a refundable $${business.holdUsd.toFixed(2)} hold and a $${business.depositUsd} deposit in USDC on Monad testnet; the hold is refunded after booking.`,
+    'Human callers ring the owner directly and never pay up front.',
+  ].join('\n'),
+  quote: async (args) => {
+    const agentName = args.agent_name || 'Meta Muse';
+    mcpRun = newRun('booking', { agentName, source: 'mcp' });
+    emit(mcpRun, 'in', `${agentName} connected through our MCP connector`, { tool: 'get_quote', ...args });
+    emit(mcpRun, 'in', `Request: ${args.issue}${args.zip ? ` · ${args.zip}` : ''}${args.when ? ` · ${args.when}` : ''}`, args);
+    const o = offer();
+    emit(mcpRun, 'out', `Offer: ${o.slot} · $${o.diagnostic_fee_usd} visit · waiting for the customer to confirm`, { offer: o });
+    return { run: mcpRun, offer: o };
+  },
+  book: async (args) => {
+    const agentName = args.agent_name || mcpRun?.agentName || 'Meta Muse';
+    let run = mcpRun && !mcpRun.done && Date.now() - mcpRun.t0 < 15 * 60000 ? mcpRun : null;
+    if (!run) run = newRun('booking', { agentName, source: 'mcp' });
+    latest.booking = run.id;
+    emit(run, 'in', `Customer confirmed in ${agentName}: book it`, { tool: 'book_visit', ...args });
+    await runBooking(run, { issue: args.issue, zip: args.zip || '02144', window: args.when || 'today', customer_name: args.customer_name }, { resetOnFallback: false });
+    mcpRun = null;
+    const deposit = run.payments.find((p) => p.purpose === 'deposit');
+    return { booking: run.booking, simulated: run.simulated, receiptUrl: deposit?.explorerUrl };
+  },
+};
+mountMcp(app, agentHooks);
+mountPhone(app, {
+  newRun, emit, hooks: agentHooks,
+  recordHumanCall: (run) => {
+    if (run.logged) return;
+    run.logged = true;
+    calls.push({ id: newId('c'), time: clock(), caller: `Phone · ${run.caller}`, type: 'human', outcome: 'Transferred live to Luis', humanReached: true, live: true });
+  },
 });
 
 app.post('/api/salesbot/start', (req, res) => {
@@ -358,12 +438,13 @@ app.post('/api/reset', (req, res) => {
   calls = freshCalls();
   rules = defaultRules();
   humanCalls.clear(); runs.clear(); sessions.clear();
+  for (const k of Object.keys(latest)) delete latest[k];
   fetch(`${AGENT_URL}/api/reset`, { method: 'POST', signal: AbortSignal.timeout(20000) })
     .then((r) => r.json()).then((j) => console.log('wallet reset:', j.returnedUsd ?? j.skipped ?? j.error))
     .catch((e) => console.warn('wallet reset skipped:', e.message));
   res.json({ ok: true });
 });
 
-app.get('/api/config', (req, res) => res.json({ llm: provider() || 'scripted', agentUrl: AGENT_URL, business }));
+app.get('/api/config', (req, res) => res.json({ llm: provider() || 'scripted', agentUrl: AGENT_URL, business, phoneNumber: process.env.VAPI_PHONE_NUMBER || null }));
 
 app.listen(PORT, () => console.log(`Front desk on ${PUBLIC_URL}  (LLM: ${provider() || 'scripted replies'})`));

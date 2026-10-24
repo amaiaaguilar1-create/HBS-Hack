@@ -8,13 +8,17 @@
     "start": "node start.js",
     "front-desk": "node --env-file-if-exists=.env front-desk/server.js",
     "caller-agent": "node --env-file-if-exists=.env caller-agent/server.js",
-    "wallets": "node caller-agent/wallets.js"
+    "wallets": "node caller-agent/wallets.js",
+    "phone": "node --env-file-if-exists=.env front-desk/vapi-setup.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "express": "^4.21.2",
-    "viem": "^2.21.54"
+    "qrcode": "^1.5.4",
+    "viem": "^2.21.54",
+    "zod": "^4.1.12"
   }
 }

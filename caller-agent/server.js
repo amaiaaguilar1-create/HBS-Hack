@@ -63,7 +63,7 @@ async function call(frontDeskUrl, path, { method = 'GET', body, headers = {} } =
 }
 
 app.post('/api/caller/run', async (req, res) => {
-  const { frontDeskUrl, runId } = req.body || {};
+  const { frontDeskUrl, runId, agentName = 'Google Gemini (demo stand-in)', request: overrides = {} } = req.body || {};
   const t0 = Date.now();
   const steps = [];
   const payments = [];
@@ -79,7 +79,7 @@ app.post('/api/caller/run', async (req, res) => {
     const card = await call(frontDeskUrl, '/.well-known/agent-card.json', { headers: runHeaders });
     step('Fetched the front desk’s agent card', card.json, 'front-desk', 'agent');
 
-    const hello = { agent: 'Google Gemini (demo stand-in)', on_behalf_of: 'homeowner, Somerville MA 02144', intent: 'book_service' };
+    const hello = { agent: agentName, on_behalf_of: overrides.customer_name ? `${overrides.customer_name}, homeowner` : 'homeowner, Somerville MA 02144', intent: 'book_service' };
     const h1 = await call(frontDeskUrl, '/a2a/hello', { method: 'POST', body: hello, headers: runHeaders });
     step('Hello: booking a plumber for a homeowner', hello);
     let session = h1.json;
@@ -95,7 +95,7 @@ app.post('/api/caller/run', async (req, res) => {
     } else if (h1.status !== 200) throw new Error(`Unexpected hello response ${h1.status}`);
     step('Session open', session, 'front-desk', 'agent');
 
-    const request = { session_id: session.session_id, issue: 'kitchen sink leak', zip: '02144', window: 'today', max_price_usd: 150 };
+    const request = { session_id: session.session_id, issue: overrides.issue || 'kitchen sink leak', zip: overrides.zip || '02144', window: overrides.window || 'today', max_price_usd: 150 };
     const b1 = await call(frontDeskUrl, '/a2a/book', { method: 'POST', body: request, headers: runHeaders });
     step('Service request', request);
     if (b1.status === 200) {
