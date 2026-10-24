@@ -152,10 +152,10 @@ function showReceipt(run) {
   const settled = deposit?.settledMs ? `${(deposit.settledMs / 1000).toFixed(1)} s` : '–';
   const asset = deposit?.asset === 'MON' ? 'MON (test USDC unavailable)' : 'USDC on Monad';
   r.innerHTML = `
-    <div><div class="head">Deposit secured</div><div class="sub">Settled in ${settled} · ${asset} · 5¢ hold returned · no card fees</div></div>
+    <div><div class="head">Paid</div><div class="sub">${settled} · ${asset} · no card fees</div></div>
     <div class="amount">$15.00</div>
     <div class="links">${link('deposit', 'View on-chain receipt')}${link('hold', 'Hold tx')}${link('refund', 'Refund tx')}</div>
-    ${run.simulated ? `<div class="sim">Simulated payment. ${esc(run.note || '')}</div>` : ''}`;
+    ${run.simulated ? '<div class="sim">Simulated payment</div>' : ''}`;
   r.hidden = false;
   $('agentTimer').textContent = `${(lastT / 1000).toFixed(1)} s`;
 }
@@ -233,23 +233,23 @@ async function resetDemo() {
 $('resetBtn').onclick = resetDemo;
 
 // ---- dashboard -------------------------------------------------------------------------
-const TYPE_LABEL = { human: 'Human', booking_agent: 'Booking agent', sales_agent: 'Sales agent' };
+const TYPE_LABEL = { human: 'Person', booking_agent: 'Agent', sales_agent: 'Bot' };
 const RULE_LABEL = {
-  holdForHumans: 'Hold same-day slots for human callers (today 2:00 PM)',
-  agentHold: 'Agents post a 5¢ refundable hold to get through',
-  agentDeposit: 'Agents pay a $15 deposit to hold a slot (humans never pay)',
+  holdForHumans: 'Keep today’s 2:00 PM for people',
+  agentHold: 'Agents post a 5¢ hold',
+  agentDeposit: 'Agents pay a $15 deposit. People never pay.',
 };
 
 async function loadDashboard() {
   const d = await fetch('/api/dashboard').then((r) => r.json());
   const k = d.kpis;
   $('kpis').innerHTML = [
-    ['h', `${k.humansReached.reached} of ${k.humansReached.total}`, 'Humans who reached a human'],
+    ['h', `${k.humansReached.reached} of ${k.humansReached.total}`, 'Reached Luis'],
     ['h', k.callbacksWaiting, 'Callbacks waiting'],
-    ['a', `$${k.agentBookingsUsd}`, `Agent bookings (${k.agentBookings} jobs)`],
-    ['', k.spamBlocked, 'Spam agents blocked'],
-    ['', `${k.misclassified.count} of ${k.misclassified.total}`, 'Misclassified (owner corrected)'],
-    ['', `${k.hoursSaved} h`, 'Hours saved today'],
+    ['a', `$${k.agentBookingsUsd}`, `${k.agentBookings} agent bookings`],
+    ['', k.spamBlocked, 'Bots blocked'],
+    ['', `${k.misclassified.count} of ${k.misclassified.total}`, 'Corrected by Luis'],
+    ['', `${k.hoursSaved} h`, 'Hours saved'],
   ].map(([c, v, l]) => `<div class="kpi ${c}"><span class="v">${esc(v)}</span><span class="k">${esc(l)}</span></div>`).join('');
 
   const waiting = d.calls.filter((c) => c.callback?.status === 'waiting').sort((a, b) => (b.callback.urgent ? 1 : 0) - (a.callback.urgent ? 1 : 0));

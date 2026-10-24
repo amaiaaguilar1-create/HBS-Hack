@@ -16,16 +16,16 @@ export const defaultRules = () => ({
 });
 
 const seed = [
-  { time: '8:02 AM', caller: 'Mr. Chen', type: 'human', outcome: 'Luis picked up', humanReached: true },
+  { time: '8:02 AM', caller: 'Mr. Chen', type: 'human', outcome: 'Talked to Luis', humanReached: true },
   { time: '8:40 AM', caller: 'ChatGPT agent for J. Park', type: 'booking_agent', outcome: 'Booked tomorrow 9:00 AM', depositUsd: 15, visitUsd: 89 },
-  { time: '9:15 AM', caller: 'SEO agency bot', type: 'sales_agent', outcome: 'Blocked: hold not paid' },
+  { time: '9:15 AM', caller: 'SEO agency bot', type: 'sales_agent', outcome: 'Blocked' },
   { time: '9:31 AM', caller: 'Dana Whitfield (landlord)', type: 'human', outcome: 'Callback completed', humanReached: true, callback: { by: '9:45 AM', urgent: false, status: 'done' } },
   { time: '10:05 AM', caller: 'Google AI for a homeowner', type: 'booking_agent', outcome: 'Booked tomorrow 11:30 AM', depositUsd: 15, visitUsd: 89 },
-  { time: '10:22 AM', caller: 'Extended warranty bot', type: 'sales_agent', outcome: 'Blocked: hold not paid' },
-  { time: '10:48 AM', caller: 'Unknown caller', type: 'human', correctedFrom: 'booking_agent', outcome: 'Callback completed (owner corrected: was a person)', humanReached: true, callback: { by: '11:00 AM', urgent: false, status: 'done' } },
-  { time: '11:30 AM', caller: 'Mr. Okafor', type: 'human', outcome: 'Message taken: water heater pilot light', humanReached: false, callback: { by: '1:30 PM', urgent: false, status: 'waiting' } },
-  { time: '11:52 AM', caller: 'Perplexity agent for R. Diaz', type: 'booking_agent', outcome: 'Quote only, hold refunded' },
-  { time: '12:10 PM', caller: 'Lead-gen bot', type: 'sales_agent', outcome: 'Blocked: hold not paid' },
+  { time: '10:22 AM', caller: 'Extended warranty bot', type: 'sales_agent', outcome: 'Blocked' },
+  { time: '10:48 AM', caller: 'Unknown caller', type: 'human', correctedFrom: 'booking_agent', outcome: 'Called back', humanReached: true, callback: { by: '11:00 AM', urgent: false, status: 'done' } },
+  { time: '11:30 AM', caller: 'Mr. Okafor', type: 'human', outcome: 'Message: water heater pilot light', humanReached: false, callback: { by: '1:30 PM', urgent: false, status: 'waiting' } },
+  { time: '11:52 AM', caller: 'Perplexity agent for R. Diaz', type: 'booking_agent', outcome: 'Quote only' },
+  { time: '12:10 PM', caller: 'Lead-gen bot', type: 'sales_agent', outcome: 'Blocked' },
 ];
 
 let nextId = 1;

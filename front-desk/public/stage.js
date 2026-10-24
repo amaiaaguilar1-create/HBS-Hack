@@ -28,32 +28,32 @@
   // ---- what each kind of call looks like ------------------------------------------------
   const FLOWS = {
     person: {
-      verdict: 'Person', cls: 'v-person', kicker: 'A person is calling',
+      verdict: 'Person', cls: 'v-person', kicker: 'Incoming call',
       steps: [
-        ['answer', 'Answered with an AI disclosure', /^Answered/],
-        ['recognize', 'Recognized a person, no screening questions', /Person on the line/],
-        ['ring', 'Ringing Luis’s phone', /Transferring|Ringing Luis/],
-        ['connect', 'Luis picked up, person to person', /picked up|Call ended/],
+        ['answer', 'Answered, AI disclosed', /^Answered/],
+        ['recognize', 'It’s a person', /Person on the line/],
+        ['ring', 'Ringing Luis', /Transferring|Ringing Luis/],
+        ['connect', 'Connected to Luis', /picked up|Call ended/],
       ],
     },
     agent: {
-      verdict: 'AI agent', cls: 'v-agent', kicker: 'An AI agent is calling to book',
+      verdict: 'AI agent', cls: 'v-agent', kicker: 'Incoming booking',
       steps: [
-        ['recognize', 'Recognized an AI agent', /^Hello from|connected through our MCP|AI agent calling to book|agent card/],
-        ['hold', '5¢ refundable hold paid', /^Hold paid|no hold required/i],
-        ['quote', 'Quote and slot sent as data', /^Offer|^Quoted/],
-        ['deposit', '$15 deposit paid in USDC', /^Deposit paid|no deposit required/i],
+        ['recognize', 'It’s an AI agent', /^Hello from|connected through our MCP|AI agent calling to book|agent card/],
+        ['hold', '5¢ hold paid', /^Hold paid|no hold required/i],
+        ['quote', 'Quote sent', /^Offer|^Quoted/],
+        ['deposit', '$15 deposit paid', /^Deposit paid|no deposit required/i],
         ['book', 'Booked', /^Booking confirmed|^Booked/],
-        ['refund', '5¢ hold returned', /^Hold refunded/],
+        ['refund', '5¢ hold refunded', /^Hold refunded/],
       ],
     },
     sales: {
-      verdict: 'Sales bot', cls: 'v-sales', kicker: 'A sales bot is calling',
+      verdict: 'Sales bot', cls: 'v-sales', kicker: 'Incoming sales call',
       steps: [
-        ['recognize', 'Recognized a sales bot', /^Hello from|Sales bot:/],
-        ['hold', 'Asked for the same 5¢ hold', /hold required/],
-        ['decline', 'It didn’t pay', /declined|Blocked|Sales bot:/],
-        ['block', 'Blocked, Luis never interrupted', /^Blocked|Sales bot:/],
+        ['recognize', 'It’s a sales bot', /^Hello from|Sales bot:/],
+        ['hold', 'Asked for a 5¢ hold', /hold required/],
+        ['decline', 'Didn’t pay', /declined|Blocked|Sales bot:/],
+        ['block', 'Blocked', /^Blocked|Sales bot:/],
       ],
     },
   };
@@ -72,10 +72,10 @@
 
   function resetStage() {
     current = null;
-    el('sKicker').textContent = 'Waiting for the next call';
+    el('sKicker').textContent = 'Ready';
     el('sVerdict').textContent = 'Line open';
     el('sVerdict').className = 'verdict';
-    el('sWho').textContent = 'People reach a person. AI agents get a fast lane. Sales bots pay to waste your time.';
+    el('sWho').textContent = 'People reach Luis. Agents book in seconds. Bots stay out.';
     el('sTrack').innerHTML = '';
     el('sFinale').hidden = true;
     el('sTicker').textContent = '';
@@ -84,9 +84,9 @@
   }
 
   function whoLine(run, flow) {
-    if (flow === 'agent') return `${run.agentName || 'AI agent'}${run.source === 'mcp' ? ', booking through our connector' : run.source === 'phone' ? ', on the phone' : ''} · kitchen sink leak · Somerville`;
-    if (flow === 'sales') return 'GrowthLeads outbound agent · “3x more leads with local SEO”';
-    return `Calling from ${run.caller || '(617) 555-0142'}${run.source === 'phone' ? ' · live phone call' : ''}`;
+    if (flow === 'agent') return `${run.agentName || 'AI agent'} · kitchen sink leak`;
+    if (flow === 'sales') return 'GrowthLeads · selling SEO';
+    return `From ${run.caller || '(617) 555-0142'}`;
   }
 
   function render(run) {
@@ -94,9 +94,9 @@
     const stage = document.getElementById('stage');
     if (!flow) {
       el('sKicker').textContent = `Incoming call · ${run.caller || ''}`;
-      el('sVerdict').textContent = 'Listening…';
+      el('sVerdict').textContent = 'Listening';
       el('sVerdict').className = 'verdict v-listen';
-      el('sWho').textContent = 'Identifying the caller from its first words';
+      el('sWho').textContent = 'Who’s calling?';
       renderTicker(run);
       return;
     }
@@ -126,8 +126,8 @@
       li.classList.toggle('done', Boolean(ev));
       if (ev) {
         li.querySelector('.time').textContent = `${(ev.tMs / 1000).toFixed(1)} s`;
-        if (li.dataset.k === 'quote' && ev.json?.offer) li.querySelector('.label').textContent = `Quote sent as data: ${ev.json.offer.slot}, $${ev.json.offer.diagnostic_fee_usd}`;
-        if (li.dataset.k === 'quote' && ev.json?.slot) li.querySelector('.label').textContent = `Quote sent as data: ${ev.json.slot}, $${ev.json.diagnostic_fee_usd}`;
+        if (li.dataset.k === 'quote' && ev.json?.offer) li.querySelector('.label').textContent = `Quote sent: ${ev.json.offer.slot}, $${ev.json.offer.diagnostic_fee_usd}`;
+        if (li.dataset.k === 'quote' && ev.json?.slot) li.querySelector('.label').textContent = `Quote sent: ${ev.json.slot}, $${ev.json.diagnostic_fee_usd}`;
         if (li.dataset.k === 'book' && ev.json?.booking_id) li.querySelector('.label').textContent = `Booked ${ev.json.slot} · ${ev.json.booking_id}`;
       }
       const isActive = !ev && !activeSet && !run.done;
@@ -156,17 +156,17 @@
       const secs = deposit?.settledMs ? (deposit.settledMs / 1000).toFixed(1) : null;
       f.innerHTML = `
         <div class="amount">$15.00</div>
-        <div class="fin-copy"><b>Deposit secured${secs ? ` in ${secs} s` : ''}</b>
-          <span>${run.simulated ? 'Simulated payment (test wallet not funded)' : 'USDC on Monad · 5¢ hold returned · no card fees'}</span>
+        <div class="fin-copy"><b>Paid${secs ? ` in ${secs} s` : ''}</b>
+          <span>${run.simulated ? 'Simulated payment' : 'USDC on Monad · no card fees'}</span>
           ${url && !run.simulated ? `<span class="tx">${url.replace('https://', '').slice(0, 44)}…</span>` : ''}</div>
         ${url && !run.simulated ? `<img class="qr" src="/api/qr.svg?data=${encodeURIComponent(url)}" alt="QR code linking to the transaction on the Monad explorer">` : ''}`;
       chime('done');
     } else if (flow === 'person') {
-      f.innerHTML = `<div class="amount person">Connected</div><div class="fin-copy"><b>Luis is on the line</b><span>${run.source === 'simulated' ? 'Rehearsal call' : 'Live call'} · the caller never talked to a bot</span></div>`;
+      f.innerHTML = `<div class="amount person">Connected</div><div class="fin-copy"><b>Luis is on the line</b><span>${run.source === 'simulated' ? 'Rehearsal' : 'Live call'} · no bot in between</span></div>`;
       chime('done');
     } else {
       const last = run.events[run.events.length - 1];
-      f.innerHTML = `<div class="amount sales">${last ? `${(last.tMs / 1000).toFixed(1)} s` : 'Blocked'}</div><div class="fin-copy"><b>Blocked before it reached Luis</b><span>It would not post a 5¢ hold. That’s the point.</span></div>`;
+      f.innerHTML = `<div class="amount sales">${last ? `${(last.tMs / 1000).toFixed(1)} s` : 'Blocked'}</div><div class="fin-copy"><b>Blocked</b><span>Luis never heard it.</span></div>`;
     }
     f.hidden = false;
   }
@@ -201,7 +201,7 @@
     } catch { /* ignore */ }
   }
 
-  fetch('/api/config').then((r) => r.json()).then((c) => { if (c.phoneNumber) el('lineNumber').textContent = `Call ${c.phoneNumber}`; }).catch(() => {});
+  fetch('/api/config').then((r) => r.json()).then((c) => { if (c.phoneNumber) { const d = c.phoneNumber.replace(/\D/g, '').slice(-10); el('lineNumber').textContent = `Call (${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`; } }).catch(() => {});
 
   document.addEventListener('pointerdown', unlock);
   document.addEventListener('keydown', async (e) => {

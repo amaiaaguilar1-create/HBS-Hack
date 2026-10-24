@@ -14,27 +14,27 @@
 <body>
 <header class="topbar">
   <div class="brand"><b id="brandName">Firsthand</b><span id="brandTagline"></span></div>
-  <div class="biz"><span id="bizName">Rivera Plumbing &amp; Heating</span><span class="dim">· Somerville, MA · Luis is on a job</span></div>
+  <div class="biz"><span id="bizName">Rivera Plumbing &amp; Heating</span><span class="dim">· Somerville, MA</span></div>
   <nav class="tabs" aria-label="Views">
-    <a href="#stage" id="tabStage">Stage</a>
-    <a href="#live" id="tabLive">All lanes</a>
-    <a href="#dashboard" id="tabDash">Owner dashboard</a>
+    <a href="#stage" id="tabStage">Live</a>
+    <a href="#live" id="tabLive">All calls</a>
+    <a href="#dashboard" id="tabDash">Dashboard</a>
   </nav>
-  <button class="ghost" id="resetBtn" title="Reset demo (R)">Reset demo</button>
+  <button class="ghost" id="resetBtn" title="Reset (R)">Reset</button>
 </header>
 
 <main id="stage" class="stage" hidden>
   <aside class="tally" aria-label="Today at Rivera Plumbing">
     <p class="eyebrow">Today</p>
-    <div class="t-row h"><span class="n" id="tHumans">0</span><span class="l">people reached a person</span></div>
-    <div class="t-row a"><span class="n" id="tAgents">0</span><span class="l">bookings made by AI agents</span></div>
-    <div class="t-row s"><span class="n" id="tSpam">0</span><span class="l">sales bots blocked</span></div>
+    <div class="t-row h"><span class="n" id="tHumans">0</span><span class="l">people reached Luis</span></div>
+    <div class="t-row a"><span class="n" id="tAgents">0</span><span class="l">agent bookings</span></div>
+    <div class="t-row s"><span class="n" id="tSpam">0</span><span class="l">bots blocked</span></div>
     <p class="line-note">Rivera Plumbing &amp; Heating<br><span id="lineNumber">Line open</span></p>
   </aside>
   <section class="focus" aria-live="polite" aria-atomic="false">
-    <p class="kicker" id="sKicker">Waiting for the next call</p>
+    <p class="kicker" id="sKicker">Ready</p>
     <h1 class="verdict" id="sVerdict">Line open</h1>
-    <p class="who" id="sWho">People reach a person. AI agents get a fast lane. Sales bots pay to waste your time.</p>
+    <p class="who" id="sWho">People reach Luis. Agents book in seconds. Bots stay out.</p>
     <ol class="track" id="sTrack"></ol>
     <div class="finale" id="sFinale" hidden></div>
   </section>
@@ -44,7 +44,7 @@
 <main id="live" class="live">
   <section class="lane human" aria-labelledby="humanTitle">
     <div class="lane-head">
-      <div><p class="eyebrow">Humans reach a human</p><h2 id="humanTitle">Person calling</h2></div>
+      <div><p class="eyebrow">People</p><h2 id="humanTitle">Reach Luis</h2></div>
       <div class="row">
         <button class="icon" id="speakBtn" aria-pressed="true" title="Read replies aloud">🔊 Voice on</button>
         <button class="primary" id="humanBtn">Mrs. Alvarez calls <kbd>H</kbd></button>
@@ -56,7 +56,7 @@
       <span class="timer" id="humanTimer">0:00</span>
       <p class="status" id="humanStatus"></p>
     </div>
-    <div class="empty" id="humanEmpty">Waiting for a call</div>
+    <div class="empty" id="humanEmpty">No call yet</div>
     <div class="transcript" id="transcript" aria-live="polite"></div>
     <div class="cards" id="humanCards"></div>
     <div class="suggest" id="suggest" hidden>
@@ -69,35 +69,35 @@
 
   <section class="lane agent" aria-labelledby="agentTitle">
     <div class="lane-head">
-      <div><p class="eyebrow">Booking agents get a fast lane</p><h2 id="agentTitle">AI agent calling</h2></div>
-      <button class="primary" id="agentBtn">Gemini calls for a homeowner <kbd>A</kbd></button>
+      <div><p class="eyebrow">AI agents</p><h2 id="agentTitle">Book in seconds</h2></div>
+      <button class="primary" id="agentBtn">Agent books a plumber <kbd>A</kbd></button>
     </div>
     <div class="callcard" id="agentCard" hidden>
       <div class="who"><b>Google Gemini</b><span class="dim">for a homeowner · 02144</span></div>
       <span class="badge" id="agentBadge">Identifying caller…</span>
       <div class="race"><span class="bigtime" id="agentTimer">0.0 s</span><span class="dim">Typical phone call: 3 min 40 s</span></div>
     </div>
-    <div class="empty" id="agentEmpty">Waiting for a call</div>
+    <div class="empty" id="agentEmpty">No call yet</div>
     <ol class="stream" id="stream" aria-live="polite"></ol>
     <div class="receipt" id="receipt" hidden></div>
   </section>
 
   <section class="spamrow" aria-labelledby="spamTitle">
-    <div><p class="eyebrow" id="spamTitle">Sales &amp; spam bots</p><button class="secondary" id="salesBtn">Sales bot calls <kbd>S</kbd></button></div>
-    <div class="spamflow" id="spamflow"><span class="dim">Bots are asked for the same 5¢ refundable hold. They don’t pay, so they never reach the owner.</span></div>
+    <div><p class="eyebrow" id="spamTitle">Bots</p><button class="secondary" id="salesBtn">Sales bot calls <kbd>S</kbd></button></div>
+    <div class="spamflow" id="spamflow"><span class="dim">Bots must post a 5¢ hold. They don’t, so Luis never hears them.</span></div>
   </section>
 
-  <p class="hints">Keys: <kbd>H</kbd> human call · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> caller lines · <kbd>A</kbd> agent call · <kbd>S</kbd> sales bot · <kbd>D</kbd> dashboard · <kbd>L</kbd> live · <kbd>R</kbd> reset</p>
+  <p class="hints"><kbd>H</kbd> person · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> lines · <kbd>A</kbd> agent · <kbd>S</kbd> bot · <kbd>R</kbd> reset</p>
 </main>
 
 <main id="dashboard" class="dash" hidden>
   <div class="kpis" id="kpis"></div>
   <div class="dash-grid">
     <div class="col">
-      <section class="panel"><h3>Callback list</h3><ul class="callbacks" id="callbacks"></ul></section>
-      <section class="panel"><h3>Owner rules</h3><div id="rules"></div><p class="fine">Agents may quote published prices, book open slots that aren’t held, and take the deposit. Custom quotes, jobs over $500 and after-hours emergencies need Luis’s approval.</p></section>
+      <section class="panel"><h3>Call back</h3><ul class="callbacks" id="callbacks"></ul></section>
+      <section class="panel"><h3>Rules</h3><div id="rules"></div><p class="fine">Agents can quote listed prices, book open slots and take the deposit. Anything else goes to Luis.</p></section>
     </div>
-    <section class="panel log"><h3>Today’s calls</h3><div class="tablewrap"><table><thead><tr><th>Time</th><th>Caller</th><th>Type</th><th>Outcome</th><th>Deposit</th><th></th></tr></thead><tbody id="log"></tbody></table></div></section>
+    <section class="panel log"><h3>Today</h3><div class="tablewrap"><table><thead><tr><th>Time</th><th>Caller</th><th>Type</th><th>Outcome</th><th>Deposit</th><th></th></tr></thead><tbody id="log"></tbody></table></div></section>
   </div>
 </main>
 
