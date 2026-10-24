@@ -67,7 +67,7 @@ export async function pay({ from = 'caller', to, amountUsd, purpose = 'payment' 
   } else {
     asset = 'MON';
     note = `Not enough test USDC in the ${from} wallet, so this sent 0.001 MON instead.`;
-    hash = await wallet.sendTransaction({ to, value: parseEther('0.001'), gas: 21000n });
+    hash = await wallet.sendTransaction({ to, value: parseEther('0.001'), gas: 60000n });
   }
   const receipt = await pub.waitForTransactionReceipt({ hash, timeout: 15000 });
   if (receipt.status !== 'success') throw new Error(`Transaction ${hash} reverted`);
