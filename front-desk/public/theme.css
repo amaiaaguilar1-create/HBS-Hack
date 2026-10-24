@@ -1,0 +1,53 @@
+/* Firsthand · Main Street theme. Loaded after styles.css; overrides its dark-screen colors and type.
+   Color = who is calling: tomato a person, cobalt an AI agent, stone a bot, moss confirmed/paid.
+   Shape travels with color: people round, agents square, bots a dash. */
+:root { color-scheme: light; --display: 'Fraunces', Georgia, serif; --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; --sunken: #EDE5D6; --stone-soft: #E8E3D8; --stone-soft-ink: #66615A; }
+body { font-family: var(--sans); }
+:focus-visible { outline-color: var(--fg); }
+
+/* Display type: Fraunces for the name, headings, the stage verdict and big numbers */
+.brand b, .lane h2, .verdict, .finale .fin-copy b, .panel h3, .callcard .who b { font-family: var(--display); letter-spacing: -.01em; }
+.brand b { font-size: 26px; font-weight: 600; }
+.verdict { font-weight: 600; letter-spacing: -.035em; font-variation-settings: "opsz" 144; }
+.t-row .n, .finale .amount, .kpi .v, .receipt .amount { font-family: var(--display); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.bigtime { font-family: var(--sans); font-weight: 700; letter-spacing: -.02em; }
+
+/* Labels in sentence case, no tracked capitals */
+.eyebrow, .kicker, .card b, .ev .dir, th { text-transform: none; letter-spacing: 0; }
+.eyebrow, .kicker { font-weight: 600; }
+.kicker { font-size: 22px; }
+
+/* Top bar and tabs on paper */
+.topbar, body.on-dash .topbar { border-color: var(--line); }
+.tabs a.active, body.on-dash .tabs a.active { background: var(--sunken); }
+
+/* Buttons: white text on the tomato and cobalt fills */
+.primary { color: #FFFFFF; }
+
+/* Live lanes */
+.bubble.caller { background: var(--sunken); color: var(--fg); }
+.card { background: var(--surface); }
+.card.urgent { border-left-color: var(--human-ink); }
+.card.urgent b { color: var(--human-ink); }
+.ev { background: var(--surface); }
+.ev pre { color: #3E4A44; }
+.receipt .sim { color: #8A5A00; }
+.chip { background: var(--surface); }
+.chip.blocked { background: var(--stone-soft); color: var(--stone-soft-ink); }
+
+/* Dashboard on warm white */
+.kpi, .panel { background: var(--surface); border-color: var(--line); }
+.callbacks li { background: #FFFDF8; }
+.callbacks li.urgent { border-left-color: var(--human-ink); background: var(--human-soft); }
+.pill.human { background: var(--human-soft); }
+.pill.booking_agent { background: var(--agent-soft); }
+.pill.sales_agent { background: var(--stone-soft); color: var(--stone-soft-ink); }
+th { border-bottom-color: var(--line); }
+td { border-bottom-color: var(--line); }
+
+/* Stage: shape per lane, quieter pending steps and ticker */
+.track li { color: #9A9488; }
+.stage[data-flow="agent"] .track li .dot { border-radius: 3px; }
+.stage[data-flow="sales"] .track li .dot { height: 6px; border-radius: 3px; border-width: 0; background: currentColor; }
+.ticker { color: #7A7468; }
+.finale { background: var(--surface); }
