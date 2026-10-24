@@ -1,4 +1,4 @@
-# Dualtone (working name)
+# Firsthand (working name)
 
 A phone front desk for small service businesses that sorts every caller into one of three kinds:
 

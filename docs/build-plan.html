@@ -1,4 +1,4 @@
-<title>Dualtone Build Plan</title>
+<title>Firsthand Build Plan</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -145,11 +145,11 @@ footer { font-size: 13px; color: var(--muted); }
 <header class="hero">
   <div class="brand">
     <svg viewBox="0 0 120 72" aria-hidden="true"><path d="M4 36 C 24 4, 44 4, 60 36 S 96 68, 116 36" fill="none" stroke="var(--human)" stroke-width="10" stroke-linecap="round"/><path d="M4 36 C 24 68, 44 68, 60 36 S 96 4, 116 36" fill="none" stroke="var(--agent)" stroke-width="10" stroke-linecap="round"/></svg>
-    <span>Dualtone</span>
+    <span>Firsthand</span>
   </div>
   <p class="eyebrow">HBS × MIT Hackathon · Saturday, October 24 · build 12:00 → submit by 3:30 PM · demo 3:45</p>
   <h1>Build plan for a two-lane front desk, in three hours, on Replit</h1>
-  <p class="lede">Dualtone answers a plumber’s phone and sorts every caller into one of three kinds. People ring through to the owner; if he’s on a job, a disclosed assistant takes a message and promises a callback time. Booking agents post a refundable 5¢ hold, get a two-second structured lane, and pay a $15 deposit in USDC on Monad. Sales and spam bots won’t pay the hold, so they never reach the owner. This page holds every decision, the task split, the prompts to paste into Replit Agent, and the 90-second script.</p>
+  <p class="lede">Firsthand answers a plumber’s phone and sorts every caller into one of three kinds. People ring through to the owner; if he’s on a job, a disclosed assistant takes a message and promises a callback time. Booking agents post a refundable 5¢ hold, get a two-second structured lane, and pay a $15 deposit in USDC on Monad. Sales and spam bots won’t pay the hold, so they never reach the owner. This page holds every decision, the task split, the prompts to paste into Replit Agent, and the 90-second script.</p>
   <div class="decisions">
     <div class="decision"><b>Hero customer</b><span>Plumbing &amp; HVAC shops with under 20 staff (96,222 US firms). Demo business: “Rivera Plumbing &amp; Heating”.</span></div>
     <div class="decision"><b>The insight</b><span>An agent shopping five plumbers books the first one it can read. Agent-readable is the new “answering the phone”.</span></div>
@@ -200,7 +200,7 @@ footer { font-size: 13px; color: var(--muted); }
     <p>Replit allows one Agent task at a time per project, and two people prompting one Repl collide. So each of you owns one Repl, and the two meet at a small, fixed contract. The split is also true to the product: the front desk belongs to the plumber, while the caller agent and its wallet belong to the homeowner’s assistant.</p>
   </div>
   <div class="diagram">
-    <svg viewBox="0 0 900 330" role="img" aria-label="Repl A, the Dualtone front desk, exchanges messages with Repl B, the caller agent, which pays USDC on Monad testnet to the business wallet.">
+    <svg viewBox="0 0 900 330" role="img" aria-label="Repl A, the Firsthand front desk, exchanges messages with Repl B, the caller agent, which pays USDC on Monad testnet to the business wallet.">
       <rect x="10" y="20" width="330" height="290" rx="16" fill="var(--human-soft)" stroke="var(--human)" stroke-width="2"/>
       <rect x="560" y="20" width="330" height="290" rx="16" fill="var(--agent-soft)" stroke="var(--agent)" stroke-width="2"/>
       <rect x="380" y="232" width="140" height="78" rx="12" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
@@ -210,7 +210,7 @@ footer { font-size: 13px; color: var(--muted); }
       <path d="M380 270 L340 270" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#ah)"/>
       <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink)"/></marker></defs>
       <text x="30" y="56" font-family="DM Sans, Arial, sans-serif" font-size="13" font-weight="700" fill="var(--human)" letter-spacing="1.5">REPL A · AMAIA</text>
-      <text x="30" y="84" font-family="Space Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="var(--ink)">Dualtone front desk</text>
+      <text x="30" y="84" font-family="Space Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="var(--ink)">Firsthand front desk</text>
       <text x="30" y="120" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Live calls screen (2 lanes)</text>
       <text x="30" y="144" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Owner dashboard</text>
       <text x="30" y="168" font-family="DM Sans, Arial, sans-serif" font-size="14" fill="var(--muted)">Human lane: LLM + browser voice</text>
@@ -260,7 +260,7 @@ Repl B (caller agent) exposes:
   POST /api/reset       sends the test USDC back to the caller wallet (run before every demo)
 
 In the demo Repl B signs for both wallets, so it also sends the 5¢ refund.
-In production the hold would sit in an escrow contract that Dualtone controls.
+In production the hold would sit in an escrow contract that Firsthand controls.
 Explorer link format: https://testnet.monadvision.com/tx/&lt;hash&gt;</pre>
   </div>
 </section>
@@ -393,7 +393,7 @@ Explorer link format: https://testnet.monadvision.com/tx/&lt;hash&gt;</pre>
     <div class="prompt-head"><div class="meta"><span class="pill p-human">Amaia · Repl A</span><h3>P1 · Build the front desk (Plan mode)</h3><span class="when">12:15 · 20–30 min build</span></div><button class="copy" type="button" data-target="p1">Copy</button></div>
 <pre id="p1">Build a web demo of an AI phone front desk for a small plumbing company. Every caller is sorted into one of three kinds: a human, a booking agent (an AI assistant booking a job for someone), or a sales/spam agent. This is a hackathon demo shown on a projector: it must be clear, reliable and never get stuck. Use React (Vite) + Express + TypeScript in one app. Keep data in memory, seeded on startup. Show me the plan first.
 
-PLACEHOLDER BRANDING (it will change at the end, so keep it in one place): put the product name ("Dualtone"), the tagline and all colors in a single file, src/brand.ts, and read them from there everywhere. For now: dark background #10141C, light #F5F2EC, human color orange #FF8A4C, agent color blue #7FA6FF, muted text #B9C2D3. System fonts are fine. No logo work.
+PLACEHOLDER BRANDING (it will change at the end, so keep it in one place): put the product name ("Firsthand"), the tagline and all colors in a single file, src/brand.ts, and read them from there everywhere. For now: dark background #10141C, light #F5F2EC, human color orange #FF8A4C, agent color blue #7FA6FF, muted text #B9C2D3. System fonts are fine. No logo work.
 
 BUSINESS (fictional): Rivera Plumbing &amp; Heating, Somerville MA. Owner: Luis Rivera, currently out on a job. Open slots: today 2:00 PM and 4:00 PM; tomorrow 9:00 AM and 11:30 AM. Diagnostic visit $89.
 
@@ -577,7 +577,7 @@ Detection: add POST /api/detect {firstUtterance, headers} returning {type: "huma
   <div class="script">
     <div class="line"><span class="t">0:00–0:12</span><span class="who a">Amaia</span><p>“Last month, Google let Gemini phone businesses for you, from your own number. So the next call a plumber misses may be an AI, shopping five plumbers at once.”<span class="cue">Slide 1, cover.</span></p></div>
     <div class="line"><span class="t">0:12–0:22</span><span class="who a">Amaia</span><p>“Nearly half of calls to home-service shops never reach a person. Google’s AI calls to plumbers jumped 650% in a month, and a third went unanswered.”<span class="cue">Slide 2. Pause one beat on the insight bar.</span></p></div>
-    <div class="line"><span class="t">0:22–0:40</span><span class="who a">Amaia</span><p>“Dualtone sorts three kinds of callers. Mrs. Alvarez, 78, has a leak. Dualtone rings Luis first; he’s on a job, so a disclosed assistant takes her message, texts her he’ll call by 2:15, and puts her at the top of his list.”<span class="cue">Slide 3, then the live app. Ashwini drives: H, 1, 2.</span></p></div>
+    <div class="line"><span class="t">0:22–0:40</span><span class="who a">Amaia</span><p>“Firsthand sorts three kinds of callers. Mrs. Alvarez, 78, has a leak. Firsthand rings Luis first; he’s on a job, so a disclosed assistant takes her message, texts her he’ll call by 2:15, and puts her at the top of his list.”<span class="cue">Slide 3, then the live app. Ashwini drives: H, 1, 2.</span></p></div>
     <div class="line"><span class="t">0:40–1:02</span><span class="who b">Ashwini</span><p>“This is Meta’s new Muse agent, live. It got a quote from our plumber as data, and it asked me first. Yes, book it. A refundable 5-cent hold, a $15 deposit on Monad, settled in under a second, hold returned. A sales bot? It won’t pay the hold, so it never reaches Luis.”<span class="cue">Amaia drives: A, click the receipt link and hold one second, then S.</span></p></div>
     <div class="line"><span class="t">1:02–1:14</span><span class="who b">Ashwini</span><p>“Big tech is building payment rails for agents; nobody is building the front desk that receives them. And agents get speed, not priority: owners decide which slots stay with people.”<span class="cue">Slide 4. The last sentence is the fairness line.</span></p></div>
     <div class="line"><span class="t">1:14–1:20</span><span class="who b">Ashwini</span><p>“96,000 plumbing and HVAC shops, at $199 a month: a $230 million start.”<span class="cue">Slide 5.</span></p></div>
@@ -647,7 +647,7 @@ Detection: add POST /api/detect {firstUtterance, headers} returning {type: "huma
   </ol>
 </section>
 
-<footer>Dualtone · built by Amaia Aguilar and Ashwini Krishnamurthy for the HBS × MIT Hackathon, October 24, 2026.</footer>
+<footer>Firsthand · built by Amaia Aguilar and Ashwini Krishnamurthy for the HBS × MIT Hackathon, October 24, 2026.</footer>
 </div>
 
 <script>

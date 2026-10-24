@@ -1,4 +1,4 @@
-# Dualtone: project spec for Replit Agent
+# Firsthand: project spec for Replit Agent
 
 > **How to use this file.** Upload it to the root of **both** Repls as `replit.md`. Replit Agent reads `replit.md` as standing project context. Then paste the build prompts from section 9 one at a time, in order.
 > - **Repl A** "dualtone" (front desk, owned by Amaia): build sections 1–6, 8, and the Repl A prompts.
@@ -6,7 +6,7 @@
 >
 > Sections 10–12 are for the team (schedule, pitch, judge Q&A). Agent: ignore them when building.
 >
-> "Dualtone" and all colors are **placeholders**. Keep them in one file (`src/brand.ts`) so they can be changed at the end.
+> "Firsthand" and all colors are **placeholders**. Keep them in one file (`src/brand.ts`) so they can be changed at the end.
 
 ---
 
@@ -16,7 +16,7 @@ A hackathon demo (HBS × MIT Hackathon, Oct 24 2026; submit by 3:30 PM, 90-secon
 
 Every incoming call is first sorted into **one of three kinds of caller**:
 
-| Caller | What Dualtone does |
+| Caller | What Firsthand does |
 |---|---|
 | **Human** | Rings the owner first. If he's busy, a *disclosed* automated assistant takes a message, promises a callback time and texts it to the caller. It never books, quotes or diagnoses for humans. Urgent callers go to the top of the owner's callback list. Humans never pay anything. |
 | **Booking agent** (an AI assistant booking a job for someone, e.g. Google Gemini) | Asks for a **$0.05 refundable hold**, then switches to a fast structured exchange (quote + slot as JSON, within the owner's rules), collects a **$15 deposit**, confirms, and **refunds the hold**. All in USDC on Monad testnet, in about 2 seconds. |
@@ -103,7 +103,7 @@ Explorer link format: https://testnet.monadvision.com/tx/<hash>
 
 **Stack:** React (Vite) + Express + TypeScript, one app, in-memory data seeded on startup. No login. Projector-friendly: body text ≥ 18px; the Live calls screen fits 1440×900 with no page scrolling. Animate new cards in with a 150–300 ms stagger and respect `prefers-reduced-motion`.
 
-**Placeholder branding** in `src/brand.ts`: name "Dualtone", tagline "The front desk that speaks human and agent." Colors: dark #10141C, light #F5F2EC, human orange #FF8A4C, agent blue #7FA6FF, muted #B9C2D3. System fonts. No logo work.
+**Placeholder branding** in `src/brand.ts`: name "Firsthand", tagline "The front desk that speaks human and agent." Colors: dark #10141C, light #F5F2EC, human orange #FF8A4C, agent blue #7FA6FF, muted #B9C2D3. System fonts. No logo work.
 
 ### Screen 1: "Live calls" (`/`)
 Two equal columns plus a thin bottom row.
@@ -284,7 +284,7 @@ Paste one at a time. Use Plan mode for P1 and P2b. If Agent breaks something, ro
 |---|---|---|
 | 0:00 | Amaia | "Last month, Google let Gemini phone businesses for you, from your own number. So the next call a plumber misses may be an AI, shopping five plumbers at once." |
 | 0:12 | Amaia | "Nearly half of calls to home-service shops never reach a person. Google's AI calls to plumbers jumped 650% in a month, and a third went unanswered." |
-| 0:22 | Amaia | "Dualtone sorts three kinds of callers. Mrs. Alvarez, 78, has a leak. Dualtone rings Luis first; he's on a job, so a disclosed assistant takes her message, texts her he'll call by 2:15, and puts her at the top of his list." *(Ashwini drives: H, 1, 2)* |
+| 0:22 | Amaia | "Firsthand sorts three kinds of callers. Mrs. Alvarez, 78, has a leak. Firsthand rings Luis first; he's on a job, so a disclosed assistant takes her message, texts her he'll call by 2:15, and puts her at the top of his list." *(Ashwini drives: H, 1, 2)* |
 | 0:40 | Ashwini | "This is Meta's new Muse agent, live. It got a quote from our plumber as data, and it asked me first. Yes, book it. A refundable 5-cent hold, a $15 deposit on Monad, settled in under a second, hold returned. A sales bot? It won't pay the hold, so it never reaches Luis." *(Amaia drives: A, receipt link, S)* |
 | 1:02 | Ashwini | "Big tech is building payment rails for agents; nobody is building the front desk that receives them. And agents get speed, not priority: owners decide which slots stay with people." |
 | 1:14 | Ashwini | "96,000 plumbing and HVAC shops, at $199 a month: a $230 million start." |
