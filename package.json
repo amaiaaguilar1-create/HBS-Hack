@@ -1,9 +1,9 @@
 {
-  "name": "dualtone",
+  "name": "firsthand",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Front desk that sorts human, booking-agent and spam callers; agents pay a refundable hold and deposit in USDC on Monad testnet.",
+  "description": "Keep the call human: people reach the owner, AI agents book and pay in seconds on Monad, bots stay out.",
   "scripts": {
     "start": "node start.js",
     "front-desk": "node --env-file-if-exists=.env front-desk/server.js",
