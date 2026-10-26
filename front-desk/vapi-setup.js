@@ -1,5 +1,6 @@
 // Creates (or updates) the Vapi assistant and phone number for the front desk.
 // Run after the tunnel is up: `npm run phone`. Safe to re-run when the tunnel URL changes.
+import { randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const envPath = new URL('../.env', import.meta.url);
@@ -47,7 +48,13 @@ const PROMPT = `You are the automated front desk for Rivera Plumbing & Heating i
 Keep every reply to one short sentence.`;
 
 const url = await publicUrl();
-const webhook = `${url}/vapi/webhook`;
+let secret = process.env.VAPI_WEBHOOK_SECRET;
+if (!secret) {
+  secret = randomBytes(24).toString('hex');
+  saveEnv({ VAPI_WEBHOOK_SECRET: secret });
+  console.log('Created VAPI_WEBHOOK_SECRET in .env. Add the same value as a secret where the app is deployed.');
+}
+const webhook = `${url}/vapi/webhook/${secret}`;
 const fn = (name, description, properties, required = []) => ({
   type: 'function',
   function: { name, description, parameters: { type: 'object', properties, required } },
@@ -112,4 +119,4 @@ if (process.env.VAPI_PHONE_NUMBER_ID) {
 
 console.log(`\nRivera Plumbing line: ${number}`);
 console.log(`People are transferred to the owner phone ending in ${OWNER.slice(-4)}.`);
-console.log(`Webhook: ${webhook}`);
+console.log(`Webhook: ${url}/vapi/webhook/<secret>`);

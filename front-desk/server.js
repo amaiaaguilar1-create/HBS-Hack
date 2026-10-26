@@ -2,7 +2,7 @@
 // screen and the owner dashboard, and speaks an A2A-style + x402-style protocol to agents.
 import express from 'express';
 import { fileURLToPath } from 'node:url';
-import { createPublicClient, defineChain, http } from 'viem';
+import { createPublicClient, defineChain, erc20Abi, http, parseEventLogs } from 'viem';
 import { business, callbackBy, clock, defaultRules, freshCalls, kpis, newId } from './data.js';
 import { llmJSON, provider } from './llm.js';
 import { mountMcp } from './mcp.js';
@@ -15,6 +15,10 @@ const AGENT_URL = (process.env.AGENT_URL || 'http://localhost:4000').replace(/\/
 const BUSINESS_ADDRESS = process.env.BUSINESS_ADDRESS || '0x0000000000000000000000000000000000000000';
 const NETWORK = 'eip155:10143';
 const explorerTx = (hash) => `https://testnet.monadvision.com/tx/${hash}`;
+const USDC = (process.env.USDC_ADDRESS || '0x534b2f3A21130d7a60830c2Df862319e593943A3').toLowerCase();
+const TX_RE = /^0x[0-9a-fA-F]{64}$/;
+const INTERNAL_URL = `http://127.0.0.1:${PORT}`;   // how our own caller-agent reaches us
+const clip = (s, n = 80) => String(s ?? '').slice(0, n);
 
 const monad = createPublicClient({
   chain: defineChain({ id: 10143, name: 'Monad Testnet', nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 }, rpcUrls: { default: { http: [process.env.MONAD_RPC || 'https://testnet-rpc.monad.xyz'] } } }),
@@ -28,8 +32,33 @@ const humanCalls = new Map();   // callId -> { messages, logId, urgent, callback
 const runs = new Map();         // runId -> { kind, t0, events, done, simulated, payments, booking, note }
 const sessions = new Map();     // session_id -> { classification, holdTx }
 
+// Caps keep memory bounded on a public demo.
+const MAX_RUNS = 200, MAX_SESSIONS = 500, MAX_CALLS = 300, MAX_HUMAN_CALLS = 200;
+function capMap(map, max) { while (map.size > max) map.delete(map.keys().next().value); }
+function pushCall(c) { calls.push(c); if (calls.length > MAX_CALLS) calls.splice(10, calls.length - MAX_CALLS); }
+
 const app = express();
-app.use(express.json());
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Referrer-Policy', 'no-referrer');
+  next();
+});
+app.use(express.json({ limit: '20kb' }));
+
+// Simple per-IP limit on everything that changes state (GET polling is not limited).
+const hits = new Map();
+app.use((req, res, next) => {
+  if (req.method === 'GET') return next();
+  const now = Date.now();
+  const key = req.ip || 'unknown';
+  const h = hits.get(key);
+  if (!h || now - h.start > 60000) hits.set(key, { start: now, count: 1 });
+  else if (++h.count > 60) return res.status(429).json({ error: 'Too many requests. Try again in a minute.' });
+  if (hits.size > 5000) for (const [k, v] of hits) if (now - v.start > 60000) hits.delete(k);
+  next();
+});
 app.use(express.static(fileURLToPath(new URL('./public', import.meta.url)), { setHeaders: (res) => res.set('Cache-Control', 'no-store') }));
 
 // ---- agent run log (what the live screen shows) -------------------------------------------
@@ -39,14 +68,25 @@ function emit(run, dir, label, json, extra = {}) {
 }
 const runFor = (req) => runs.get(req.get('X-Run-Id'));
 
-async function verifyTx(hash) {
-  if (!/^0x[0-9a-fA-F]{64}$/.test(hash || '')) return false;
+// A payment counts only once, and only if it is a successful transfer to our business wallet of at
+// least the requested amount: USDC, or the small MON transfer the demo wallet falls back to.
+const usedTx = new Set();
+async function verifyPayment(hash, minUsd) {
+  if (!TX_RE.test(hash || '') || usedTx.has(hash.toLowerCase())) return false;
   try {
-    const receipt = await Promise.race([
-      monad.getTransactionReceipt({ hash }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+    const [receipt, tx] = await Promise.race([
+      Promise.all([monad.getTransactionReceipt({ hash }), monad.getTransaction({ hash })]),
+      timeout,
     ]);
-    return receipt.status === 'success';
+    if (receipt.status !== 'success') return false;
+    const payTo = BUSINESS_ADDRESS.toLowerCase();
+    const usdcPaid = parseEventLogs({ abi: erc20Abi, eventName: 'Transfer', logs: receipt.logs })
+      .filter((l) => l.address.toLowerCase() === USDC && l.args.to.toLowerCase() === payTo)
+      .reduce((sum, l) => sum + l.args.value, 0n);
+    const ok = usdcPaid >= BigInt(Math.round(minUsd * 1e6)) || (tx.to?.toLowerCase() === payTo && tx.value > 0n);
+    if (ok) { usedTx.add(hash.toLowerCase()); if (usedTx.size > 5000) usedTx.delete(usedTx.values().next().value); }
+    return ok;
   } catch { return false; }
 }
 
@@ -77,11 +117,11 @@ app.post('/a2a/hello', async (req, res) => {
 
   if (!tx) {
     emit(run, 'in', classification === 'sales_agent'
-      ? `Hello from ${req.body.agent}: “${req.body.pitch || 'sales call'}”`
-      : `Hello from ${req.body.agent}, booking for a homeowner`, req.body);
+      ? `Hello from ${clip(req.body.agent, 60)}: “${clip(req.body.pitch || 'sales call')}”`
+      : `Hello from ${clip(req.body.agent, 60)}, booking for a homeowner`, req.body);
     if (!rules.agentHold) {
       const session_id = newId('S-');
-      sessions.set(session_id, { classification });
+      sessions.set(session_id, { classification }); capMap(sessions, MAX_SESSIONS);
       const body = { session_id, classification, note: 'Owner rules: no hold required' };
       emit(run, 'out', classification === 'sales_agent' ? 'No hold required: sales bot gets through to the owner' : 'Session open, no hold required', body);
       return res.json(body);
@@ -94,10 +134,11 @@ app.post('/a2a/hello', async (req, res) => {
     return res.status(402).json(body);
   }
 
-  const verified = await verifyTx(tx);
-  emit(run, 'in', `Hold paid · $${business.holdUsd.toFixed(2)}${verified ? ' · verified on Monad' : ''}`, { tx, explorerUrl: explorerTx(tx), verified }, { txUrl: explorerTx(tx), purpose: 'hold' });
+  if (!TX_RE.test(tx)) return res.status(400).json({ error: 'X-PAYMENT-TX must be a transaction hash' });
+  if (!(await verifyPayment(tx, business.holdUsd))) return res.status(402).json({ error: 'Hold payment not found on Monad testnet, or already used' });
+  emit(run, 'in', `Hold paid · $${business.holdUsd.toFixed(2)} · verified on Monad`, { tx, explorerUrl: explorerTx(tx), verified: true }, { txUrl: explorerTx(tx), purpose: 'hold' });
   const session_id = newId('S-');
-  sessions.set(session_id, { classification, holdTx: tx });
+  sessions.set(session_id, { classification, holdTx: tx }); capMap(sessions, MAX_SESSIONS);
   const body = { session_id, classification };
   emit(run, 'out', 'Session open', body);
   res.json(body);
@@ -112,8 +153,8 @@ function offer() {
 function confirmBooking(run, { depositTx, simulated }) {
   const o = offer();
   const body = { booking_id: 'RPH-1042', slot: o.slot, status: 'confirmed', ...(rules.agentHold ? { hold_refund: { amount_usd: business.holdUsd } } : {}) };
-  calls.push({
-    id: newId('c'), time: clock(), caller: 'Google Gemini for a homeowner', type: 'booking_agent',
+  pushCall({
+    id: newId('c'), time: clock(), caller: `${clip(run?.agentName || 'AI agent', 40)} for a homeowner`, type: 'booking_agent',
     outcome: `Booked ${o.slot.toLowerCase()}`, visitUsd: business.visitFeeUsd,
     depositUsd: rules.agentDeposit ? business.depositUsd : 0,
     receiptUrl: depositTx && !simulated ? explorerTx(depositTx) : null, live: true,
@@ -130,7 +171,7 @@ app.post('/a2a/book', async (req, res) => {
   const tx = req.get('X-PAYMENT-TX');
 
   if (!tx) {
-    emit(run, 'in', `Request: ${req.body.issue} · ${req.body.zip} · ${req.body.window}`, req.body);
+    emit(run, 'in', `Request: ${clip(req.body.issue, 60)} · ${clip(req.body.zip, 10)} · ${clip(req.body.window, 20)}`, req.body);
     const o = offer();
     if (!rules.agentDeposit) {
       emit(run, 'out', `Offer: ${o.slot} · $${o.diagnostic_fee_usd} visit · no deposit required`, { offer: o });
@@ -144,8 +185,9 @@ app.post('/a2a/book', async (req, res) => {
     return res.status(402).json(body);
   }
 
-  const verified = await verifyTx(tx);
-  emit(run, 'in', `Deposit paid · $${business.depositUsd}.00${verified ? ' · verified on Monad' : ''}`, { tx, explorerUrl: explorerTx(tx), verified }, { txUrl: explorerTx(tx), purpose: 'deposit' });
+  if (!TX_RE.test(tx)) return res.status(400).json({ error: 'X-PAYMENT-TX must be a transaction hash' });
+  if (!(await verifyPayment(tx, business.depositUsd))) return res.status(402).json({ error: 'Deposit payment not found on Monad testnet, or already used' });
+  emit(run, 'in', `Deposit paid · $${business.depositUsd}.00 · verified on Monad`, { tx, explorerUrl: explorerTx(tx), verified: true }, { txUrl: explorerTx(tx), purpose: 'deposit' });
   res.json(confirmBooking(run, { depositTx: tx }));
 });
 
@@ -154,7 +196,8 @@ const latest = {};   // kind -> latest run id (the live screen follows these)
 function newRun(kind, extra = {}) {
   const id = newId('run');
   const run = { id, kind, t0: Date.now(), events: [], done: false, simulated: false, payments: [], agentName: 'Google Gemini', source: 'demo', ...extra };
-  runs.set(id, run);
+  if (run.agentName) run.agentName = clip(run.agentName, 40);
+  runs.set(id, run); capMap(runs, MAX_RUNS);
   latest[kind] = id;
   return run;
 }
@@ -193,11 +236,18 @@ async function simulateBooking(run, reason, { reset = true } = {}) {
 }
 
 // Runs the booking agent (caller-agent service) against our own A2A endpoints; falls back to a labelled simulation.
+// Only one live booking at a time, so the public demo can't be used to drain the test wallet.
+let bookingBusy = false;
 async function runBooking(run, request = {}, { resetOnFallback = true } = {}) {
+  if (bookingBusy) {
+    await simulateBooking(run, 'Another booking is in progress', { reset: resetOnFallback });
+    return run;
+  }
+  bookingBusy = true;
   try {
     const r = await fetch(`${AGENT_URL}/api/caller/run`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ frontDeskUrl: PUBLIC_URL, runId: run.id, agentName: run.agentName, request }),
+      body: JSON.stringify({ frontDeskUrl: INTERNAL_URL, runId: run.id, agentName: run.agentName, request }),
       signal: AbortSignal.timeout(25000),
     });
     const result = await r.json();
@@ -210,6 +260,8 @@ async function runBooking(run, request = {}, { resetOnFallback = true } = {}) {
   } catch (e) {
     console.warn('Live agent run failed, simulating:', e.message);
     await simulateBooking(run, `Live payment unavailable: ${e.message}`, { reset: resetOnFallback });
+  } finally {
+    bookingBusy = false;
   }
   return run;
 }
@@ -242,7 +294,7 @@ app.post('/api/phone/simulate', (req, res) => {
     await wait(500);
     run.classification = 'human';
     emit(run, 'out', 'Person on the line: ringing Luis now', { type: 'human' }, { classification: 'human' });
-    calls.push({ id: newId('c'), time: clock(), caller: `Phone · ${run.caller}`, type: 'human', outcome: 'Transferred live to Luis', humanReached: true, live: true });
+    pushCall({ id: newId('c'), time: clock(), caller: `Phone · ${run.caller}`, type: 'human', outcome: 'Transferred live to Luis', humanReached: true, live: true });
     await wait(400);
     emit(run, 'out', 'Transferring to Luis…', null);
     await wait(2200);
@@ -260,21 +312,21 @@ const agentHooks = {
     `Agents book with a $${business.depositUsd} testnet deposit (5¢ hold refunded).`,
   ].join('\n'),
   quote: async (args) => {
-    const agentName = args.agent_name || 'Meta Muse';
+    const agentName = clip(args.agent_name || 'Meta Muse', 40);
     mcpRun = newRun('booking', { agentName, source: 'mcp' });
     emit(mcpRun, 'in', `${agentName} connected through our MCP connector`, { tool: 'get_quote', ...args });
-    emit(mcpRun, 'in', `Request: ${args.issue}${args.zip ? ` · ${args.zip}` : ''}${args.when ? ` · ${args.when}` : ''}`, args);
+    emit(mcpRun, 'in', `Request: ${clip(args.issue, 60)}${args.zip ? ` · ${clip(args.zip, 10)}` : ''}${args.when ? ` · ${clip(args.when, 20)}` : ''}`, args);
     const o = offer();
     emit(mcpRun, 'out', `Offer: ${o.slot} · $${o.diagnostic_fee_usd} visit · waiting for the customer to confirm`, { offer: o });
     return { run: mcpRun, offer: o };
   },
   book: async (args) => {
-    const agentName = args.agent_name || mcpRun?.agentName || 'Meta Muse';
+    const agentName = clip(args.agent_name || mcpRun?.agentName || 'Meta Muse', 40);
     let run = mcpRun && !mcpRun.done && Date.now() - mcpRun.t0 < 15 * 60000 ? mcpRun : null;
     if (!run) run = newRun('booking', { agentName, source: 'mcp' });
     latest.booking = run.id;
     emit(run, 'in', `Customer confirmed in ${agentName}: book it`, { tool: 'book_visit', ...args });
-    await runBooking(run, { issue: args.issue, zip: args.zip || '02144', window: args.when || 'today', customer_name: args.customer_name }, { resetOnFallback: false });
+    await runBooking(run, { issue: clip(args.issue, 60), zip: clip(args.zip || '02144', 10), window: clip(args.when || 'today', 20), customer_name: clip(args.customer_name, 40) || undefined }, { resetOnFallback: false });
     mcpRun = null;
     const deposit = run.payments.find((p) => p.purpose === 'deposit');
     return { booking: run.booking, simulated: run.simulated, receiptUrl: deposit?.explorerUrl };
@@ -286,7 +338,7 @@ mountPhone(app, {
   recordHumanCall: (run) => {
     if (run.logged) return;
     run.logged = true;
-    calls.push({ id: newId('c'), time: clock(), caller: `Phone · ${run.caller}`, type: 'human', outcome: 'Transferred live to Luis', humanReached: true, live: true });
+    pushCall({ id: newId('c'), time: clock(), caller: `Phone · ${run.caller}`, type: 'human', outcome: 'Transferred live to Luis', humanReached: true, live: true });
   },
 });
 
@@ -296,7 +348,7 @@ app.post('/api/salesbot/start', (req, res) => {
   const finish = (simulated) => {
     const blocked = rules.agentHold;
     emit(run, 'out', blocked ? 'Blocked: hold not paid · Luis never interrupted' : 'Sales bot reached the owner (hold rule is off)', { blocked });
-    calls.push({ id: newId('c'), time: clock(), caller: 'GrowthLeads outbound agent', type: 'sales_agent', outcome: blocked ? 'Blocked: hold not paid' : 'Reached owner (no hold rule)', live: true });
+    pushCall({ id: newId('c'), time: clock(), caller: 'GrowthLeads outbound agent', type: 'sales_agent', outcome: blocked ? 'Blocked: hold not paid' : 'Reached owner (no hold rule)', live: true });
     run.simulated = simulated;
     run.done = true;
   };
@@ -304,7 +356,7 @@ app.post('/api/salesbot/start', (req, res) => {
     try {
       const r = await fetch(`${AGENT_URL}/api/salesbot/run`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ frontDeskUrl: PUBLIC_URL, runId: run.id }),
+        body: JSON.stringify({ frontDeskUrl: INTERNAL_URL, runId: run.id }),
         signal: AbortSignal.timeout(8000),
       });
       const result = await r.json();
@@ -348,7 +400,8 @@ function scriptedReply(text, call) {
 app.post('/api/human/start', (req, res) => {
   const callId = newId('h');
   const log = { id: newId('c'), time: clock(), caller: 'Mrs. Alvarez · (617) 555-0142', type: 'human', outcome: 'Luis on a job: assistant taking a message', humanReached: false, live: true };
-  calls.push(log);
+  pushCall(log);
+  capMap(humanCalls, MAX_HUMAN_CALLS);
   humanCalls.set(callId, { messages: [{ role: 'assistant', text: GREETING }], logId: log.id, urgent: false, issue: null });
   res.json({ callId, greeting: GREETING, detection: { type: 'human', confidence: 0.96, reasons: ['no agent card or agent header', 'natural speech patterns'] } });
 });

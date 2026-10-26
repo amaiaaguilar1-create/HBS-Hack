@@ -4,6 +4,8 @@
   const el = (id) => document.getElementById(id);
   const post = (url) => fetch(url, { method: 'POST' }).then((r) => r.json());
   const num = (id) => Number(String(id || '').replace(/\D/g, '')) || 0;
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isTxUrl = (u) => /^https:\/\/testnet\.monadvision\.com\/tx\/0x[0-9a-fA-F]{64}$/.test(u || '');
 
   // ---- two-tone chime: low for a person, high for an agent ------------------------------
   let audio = null;
@@ -152,13 +154,14 @@
     if (flow === 'agent') {
       const deposit = run.payments?.find((p) => p.purpose === 'deposit');
       const depEv = current.done.get('deposit');
-      const url = depEv?.txUrl || deposit?.explorerUrl;
+      const raw = depEv?.txUrl || deposit?.explorerUrl;
+      const url = isTxUrl(raw) ? raw : null;
       const secs = deposit?.settledMs ? (deposit.settledMs / 1000).toFixed(1) : null;
       f.innerHTML = `
         <div class="amount">$15.00</div>
         <div class="fin-copy"><b>Paid${secs ? ` in ${secs} s` : ''}</b>
           <span>${run.simulated ? 'Simulated payment' : 'USDC on Monad · no card fees'}</span>
-          ${url && !run.simulated ? `<span class="tx">${url.replace('https://', '').slice(0, 44)}…</span>` : ''}</div>
+          ${url && !run.simulated ? `<span class="tx">${esc(url.replace('https://', '').slice(0, 44))}…</span>` : ''}</div>
         ${url && !run.simulated ? `<img class="qr" src="/api/qr.svg?data=${encodeURIComponent(url)}" alt="QR code linking to the transaction on the Monad explorer">` : ''}`;
       chime('done');
     } else if (flow === 'person') {
@@ -186,6 +189,7 @@
       if (current) {
         const run = await fetch(`/api/run/${current.id}`).then((r) => (r.ok ? r.json() : null));
         if (run) render(run);
+        else resetStage();   // the call was cleared by a reset
       }
     } catch { /* server restarting; try again next tick */ }
   }

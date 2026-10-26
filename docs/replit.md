@@ -288,7 +288,7 @@ Paste one at a time. Use Plan mode for P1 and P2b. If Agent breaks something, ro
 | 0:40 | Ashwini | "This is Meta's new Muse agent, live. It got a quote from our plumber as data, and it asked me first. Yes, book it. A refundable 5-cent hold, a $15 deposit on Monad, settled in under a second, hold returned. A sales bot? It won't pay the hold, so it never reaches Luis." *(Amaia drives: A, receipt link, S)* |
 | 1:02 | Ashwini | "Big tech is building payment rails for agents; nobody is building the front desk that receives them. And agents get speed, not priority: owners decide which slots stay with people." |
 | 1:14 | Ashwini | "96,000 plumbing and HVAC shops, at $199 a month: a $230 million start." |
-| 1:20 | Amaia | "Ashwini invests in fintech at JPMorgan; I built AI products at Google. We'd love introductions to plumbers for our pilot." |
+| 1:20 | Amaia | "We're Firsthand. We'd love introductions to plumbers for our pilot." |
 
 ## 12. Evidence, validation and judge Q&A (not for Agent)
 

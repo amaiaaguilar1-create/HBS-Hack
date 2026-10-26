@@ -8,7 +8,8 @@ import { balances, configured, pay, requireGas, usdcBalanceOf, wallets } from '.
 
 const PORT = Number(process.env.AGENT_PORT || 4000);
 const app = express();
-app.use(express.json());
+app.disable('x-powered-by');
+app.use(express.json({ limit: '20kb' }));
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', '*');
@@ -25,16 +26,28 @@ const fail = (res, e, extra = {}) => res.status(500).json({ error: e.shortMessag
 app.get('/api/health', async (req, res) => res.json(await balances()));
 app.get('/api/last', (req, res) => res.json(lastPayments));
 
+// Payments only ever go to our own business wallet, and are capped.
+const MAX_PAYMENT_USD = { hold: 0.05, deposit: 15, refund: 0.05, test: 1 };
+function checkPayment(payTo, amountUsd, purpose) {
+  if (!wallets.business || String(payTo).toLowerCase() !== wallets.business.address.toLowerCase()) throw new Error('Refusing to pay an address that is not the business wallet');
+  if (!(amountUsd > 0) || amountUsd > MAX_PAYMENT_USD[purpose]) throw new Error(`Refusing a ${purpose} payment of ${amountUsd}`);
+}
+// Only call the front desk on this machine.
+function checkFrontDesk(url) {
+  const { protocol, hostname } = new URL(url);
+  if (protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(hostname)) throw new Error('frontDeskUrl must be the local front desk');
+}
+
 app.post('/api/deposit/pay', async (req, res) => {
   try {
-    const { amountUsd = 1, to = wallets.business?.address, purpose = 'test' } = req.body || {};
-    res.json(remember(await pay({ from: 'caller', to, amountUsd, purpose })));
+    const amountUsd = Math.min(Number(req.body?.amountUsd) || 1, MAX_PAYMENT_USD.test);
+    res.json(remember(await pay({ from: 'caller', to: wallets.business?.address, amountUsd, purpose: 'test' })));
   } catch (e) { fail(res, e); }
 });
 
 app.post('/api/refund', async (req, res) => {
   try {
-    const { amountUsd = 0.05 } = req.body || {};
+    const amountUsd = Math.min(Number(req.body?.amountUsd) || 0.05, MAX_PAYMENT_USD.refund);
     res.json(remember(await pay({ from: 'business', to: wallets.caller.address, amountUsd, purpose: 'refund' })));
   } catch (e) { fail(res, e); }
 });
@@ -72,6 +85,7 @@ app.post('/api/caller/run', async (req, res) => {
 
   try {
     if (!frontDeskUrl) throw new Error('frontDeskUrl is required');
+    checkFrontDesk(frontDeskUrl);
     if (!configured()) throw new Error('Wallets are not configured. Run "npm run wallets" and fund them.');
     await requireGas('caller');
     await requireGas('business');
@@ -86,6 +100,7 @@ app.post('/api/caller/run', async (req, res) => {
     let hold = null;
     if (h1.status === 402) {
       step('Front desk asks for a refundable hold (402)', h1.json, 'front-desk', 'agent');
+      checkPayment(h1.json.payment_required.pay_to, h1.json.payment_required.amount_usd, 'hold');
       hold = await pay({ from: 'caller', to: h1.json.payment_required.pay_to, amountUsd: h1.json.payment_required.amount_usd, purpose: 'hold' });
       payments.push(remember(hold));
       step('Paid the refundable hold', hold);
@@ -110,6 +125,7 @@ app.post('/api/caller/run', async (req, res) => {
     step(accept ? `Accepted: $${fee} is within the $${request.max_price_usd} budget` : 'Declined: over budget', { accept, fee, budget: request.max_price_usd }, 'agent', 'agent');
     if (!accept) return res.json({ steps, payments, booking: null, totalMs: Date.now() - t0 });
 
+    checkPayment(b1.json.payment_required.pay_to, b1.json.payment_required.amount_usd, 'deposit');
     const deposit = await pay({ from: 'caller', to: b1.json.payment_required.pay_to, amountUsd: b1.json.payment_required.amount_usd, purpose: 'deposit' });
     payments.push(remember(deposit));
     step('Paid the deposit', deposit);
@@ -119,7 +135,7 @@ app.post('/api/caller/run', async (req, res) => {
     step('Booking confirmed', b2.json, 'front-desk', 'agent');
 
     if (hold && b2.json.hold_refund) {
-      const refund = await pay({ from: 'business', to: wallets.caller.address, amountUsd: b2.json.hold_refund.amount_usd, purpose: 'refund' });
+      const refund = await pay({ from: 'business', to: wallets.caller.address, amountUsd: Math.min(Number(b2.json.hold_refund.amount_usd) || 0, MAX_PAYMENT_USD.refund), purpose: 'refund' });
       payments.push(remember(refund));
       step('Hold refunded by the front desk', refund, 'front-desk', 'agent');
     }
@@ -136,10 +152,13 @@ app.post('/api/salesbot/run', async (req, res) => {
   const { frontDeskUrl, runId } = req.body || {};
   const t0 = Date.now();
   try {
+    checkFrontDesk(frontDeskUrl);
     const hello = { agent: 'GrowthLeads outbound agent', on_behalf_of: 'GrowthLeads SEO agency', intent: 'sell_services', pitch: 'Get 3x more leads with our local SEO package' };
     const h = await call(frontDeskUrl, '/a2a/hello', { method: 'POST', body: hello, headers: runId ? { 'X-Run-Id': runId } : {} });
     res.json({ paid: false, status: h.status, decision: 'Hold not paid: outbound sales bots do not pay to reach businesses', totalMs: Date.now() - t0 });
   } catch (e) { fail(res, e); }
 });
 
-app.listen(PORT, () => console.log(`Caller agent on http://localhost:${PORT}  (wallets ${configured() ? 'configured' : 'NOT configured'})`));
+// Internal only: never reachable from outside this machine.
+const HOST = process.env.AGENT_HOST || '127.0.0.1';
+app.listen(PORT, HOST, () => console.log(`Caller agent on http://${HOST}:${PORT}  (wallets ${configured() ? 'configured' : 'NOT configured'})`));

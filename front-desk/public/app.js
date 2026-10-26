@@ -136,7 +136,7 @@ function renderEvent(list, ev, kind) {
   const li = document.createElement('li');
   li.className = `ev ${ev.dir}${ev.txUrl ? ' pay' : ''}`;
   const dir = ev.dir === 'in' ? (kind === 'sales' ? 'Bot → Front desk' : 'Agent → Front desk') : 'Front desk → Agent';
-  const label = ev.txUrl ? `${esc(ev.label)} · <a href="${ev.txUrl}" target="_blank" rel="noopener">tx ↗</a>` : esc(ev.label);
+  const label = ev.txUrl ? `${esc(ev.label)} · <a href="${esc(ev.txUrl)}" target="_blank" rel="noopener">tx ↗</a>` : esc(ev.label);
   li.innerHTML = `<span class="t">${(ev.tMs / 1000).toFixed(2)}s</span><div><div class="dir">${dir}</div><div class="label">${label}</div></div>` +
     (ev.json ? `<details><summary>JSON</summary><pre>${esc(JSON.stringify(ev.json, null, 2))}</pre></details>` : '');
   list.appendChild(li);
@@ -148,7 +148,7 @@ function showReceipt(run) {
   const evs = run.events;
   const lastT = evs.length ? evs[evs.length - 1].tMs : 0;
   const deposit = run.payments.find((p) => p.purpose === 'deposit');
-  const link = (purpose, text) => { const e = evs.find((x) => x.purpose === purpose && x.txUrl); return e ? `<a href="${e.txUrl}" target="_blank" rel="noopener">${text} ↗</a>` : ''; };
+  const link = (purpose, text) => { const e = evs.find((x) => x.purpose === purpose && x.txUrl); return e ? `<a href="${esc(e.txUrl)}" target="_blank" rel="noopener">${text} ↗</a>` : ''; };
   const settled = deposit?.settledMs ? `${(deposit.settledMs / 1000).toFixed(1)} s` : '–';
   const asset = deposit?.asset === 'MON' ? 'MON (test USDC unavailable)' : 'USDC on Monad';
   r.innerHTML = `
@@ -264,7 +264,7 @@ async function loadDashboard() {
     <tr class="${c.live ? 'fresh' : ''}"><td>${esc(c.time)}</td><td>${esc(c.caller)}</td>
     <td><span class="pill ${c.type}">${TYPE_LABEL[c.type]}</span>${c.correctedFrom ? `<span class="corrected">corrected from ${TYPE_LABEL[c.correctedFrom]}</span>` : ''}</td>
     <td>${esc(c.outcome)}</td>
-    <td>${c.depositUsd ? `$${c.depositUsd}` : '–'}${c.receiptUrl ? ` · <a href="${c.receiptUrl}" target="_blank" rel="noopener">receipt ↗</a>` : ''}</td>
+    <td>${c.depositUsd ? `$${c.depositUsd}` : '–'}${c.receiptUrl ? ` · <a href="${esc(c.receiptUrl)}" target="_blank" rel="noopener">receipt ↗</a>` : ''}</td>
     <td><select data-correct="${c.id}" aria-label="Correct the caller type"><option value="">Wrong type?</option>${Object.entries(TYPE_LABEL).filter(([t]) => t !== c.type).map(([t, l]) => `<option value="${t}">This was a ${t === 'human' ? 'person' : l.toLowerCase()}</option>`).join('')}</select></td></tr>`).join('');
 }
 

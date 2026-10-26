@@ -1,19 +1,27 @@
 // Real phone line via Vapi. People are transferred straight to the owner; AI agents get the booking
 // fast lane through the same quote/book logic as the MCP connector. Every step is pushed to the live screen.
+// The webhook URL carries a secret (VAPI_WEBHOOK_SECRET) that only our saved Vapi assistant knows;
+// without it the endpoint stays off. Caller numbers are masked and transcripts stay off the public
+// screen unless SHOW_TRANSCRIPTS=true.
+const mask = (n) => { const d = String(n || '').replace(/\D/g, ''); return d.length >= 4 ? `•••-•••-${d.slice(-4)}` : 'Unknown number'; };
+
 export function mountPhone(app, { newRun, emit, hooks, recordHumanCall }) {
   const calls = new Map();   // vapi call id -> run
+  const SECRET = process.env.VAPI_WEBHOOK_SECRET;
 
   const runFor = (call) => {
     const id = call?.id || 'unknown';
     if (!calls.has(id)) {
-      const run = newRun('phone', { source: 'phone', caller: call?.customer?.number || 'Unknown number', classification: null });
+      const run = newRun('phone', { source: 'phone', caller: mask(call?.customer?.number), classification: null });
       calls.set(id, run);
+      while (calls.size > 200) calls.delete(calls.keys().next().value);
       emit(run, 'in', `Incoming call from ${run.caller}`, { callId: id });
     }
     return calls.get(id);
   };
 
-  app.post('/vapi/webhook', async (req, res) => {
+  app.post('/vapi/webhook/:secret', async (req, res) => {
+    if (!SECRET || req.params.secret !== SECRET) return res.status(404).end();
     const m = req.body?.message || {};
     const run = runFor(m.call);
 
@@ -58,7 +66,7 @@ export function mountPhone(app, { newRun, emit, hooks, recordHumanCall }) {
       if (m.status === 'ended') { emit(run, 'out', `Call ended${m.endedReason ? ` (${m.endedReason})` : ''}`, { status: m.status }); run.done = true; }
     } else if (m.type === 'transfer-destination-request' || m.type === 'transfer-update') {
       emit(run, 'out', 'Ringing Luis’s phone…', { type: m.type });
-    } else if (m.type === 'transcript' && m.transcriptType === 'final') {
+    } else if (m.type === 'transcript' && m.transcriptType === 'final' && process.env.SHOW_TRANSCRIPTS === 'true') {
       emit(run, m.role === 'user' ? 'in' : 'out', `${m.role === 'user' ? 'Caller' : 'Front desk'}: “${m.transcript}”`, null, { transcript: true });
     } else if (m.type === 'end-of-call-report') {
       run.done = true;
