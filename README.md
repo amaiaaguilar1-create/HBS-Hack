@@ -12,6 +12,8 @@ The owner sets the rules: which slots stay with people, and what agents may comm
 
 Built in one day for the HBS × MIT Hackathon (October 24, 2026) by Amaia Aguilar and Ashwini Krishnamurthy. **4th place.**
 
+**Live demo:** https://firsthand.replit.app · open it and press `A` (agent), `H` (person) or `S` (bot). Or call **(857) 228-9369**.
+
 ## What's in the demo
 
 | Piece | What it shows |
