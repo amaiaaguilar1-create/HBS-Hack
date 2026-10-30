@@ -63,7 +63,7 @@ const fn = (name, description, properties, required = []) => ({
 
 const assistant = {
   name: 'Rivera Plumbing front desk',
-  firstMessage: 'Rivera Plumbing. I’m an automated assistant, and this call may be transcribed. How can I help?',
+  firstMessage: 'Thanks for calling. I’m the automated assistant for Rivera Plumbing & Heating, and this call may be transcribed. How can I help you today?',
   firstMessageMode: 'assistant-speaks-first',
   model: {
     provider: 'openai',
