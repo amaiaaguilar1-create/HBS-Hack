@@ -84,7 +84,7 @@ const assistant = {
       }, ['issue']),
     ],
   },
-  voice: { provider: 'vapi', voiceId: 'Elliot' },
+  voice: { provider: 'vapi', voiceId: 'Savannah', version: 2 },
   server: { url: webhook },
   serverMessages: ['status-update', 'tool-calls', 'transcript', 'end-of-call-report', 'transfer-destination-request'],
   maxDurationSeconds: 300,
